@@ -4,9 +4,11 @@ import { fetchApi } from "@/lib/api/fetchApi";
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
+
   return {
     // Rendered through the root template as "LMS - <course slug>".
     title: slug,
+    alternates: { canonical: `/courses/${encodeURIComponent(slug)}` },
   };
 }
 

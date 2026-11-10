@@ -8,6 +8,8 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Blog",
   description: "Guides, deep dives and notes from the people teaching here.",
+  // ?page=2 is the same list; keep the canonical on the first page.
+  alternates: { canonical: "/blog" },
 };
 
 const PER_PAGE = 9;

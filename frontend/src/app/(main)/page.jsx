@@ -18,6 +18,7 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Online Courses",
   description: "Learn new skills with expert-led video courses.",
+  alternates: { canonical: "/" },
 };
 
 export default async function Home() {

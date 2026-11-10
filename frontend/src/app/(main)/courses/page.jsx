@@ -7,6 +7,8 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Courses",
   description: "Browse all courses.",
+  // Filters live in the query string; the canonical points at the clean list.
+  alternates: { canonical: "/courses" },
 };
 
 

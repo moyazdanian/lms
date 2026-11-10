@@ -329,9 +329,10 @@ DB_PASSWORD=</code></pre>
             <div class="codeblock" data-label="frontend/.env.local">
               <pre><code>NEXT_PUBLIC_API_PROD_URL=http://localhost:8000
 NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_MEDIA_HOSTS=</code></pre>
             </div>
-            <p>Both values are the backend origin only — the <code>/api/v1</code> part is added by the code, so including it here produces 404s.</p>
+            <p>The two API values are the backend origin only — the <code>/api/v1</code> part is added by the code, so including it here produces 404s. <code>NEXT_PUBLIC_SITE_URL</code> is the storefront's own address and is only used for SEO links.</p>
             <div class="table-wrap">
               <table>
                 <thead>
@@ -348,6 +349,10 @@ NEXT_PUBLIC_MEDIA_HOSTS=</code></pre>
                   <tr>
                     <th scope="row"><code>NEXT_PUBLIC_API_URL</code></th>
                     <td>Allows images served by the backend to load through <code>next/image</code>.</td>
+                  </tr>
+                  <tr>
+                    <th scope="row"><code>NEXT_PUBLIC_SITE_URL</code></th>
+                    <td>Public origin of the storefront itself (<code>https://www.example.com</code>), used for <code>/sitemap.xml</code>, <code>/robots.txt</code> and canonical/Open Graph URLs. Leave it out in development to use <code>http://localhost:3000</code>.</td>
                   </tr>
                   <tr>
                     <th scope="row"><code>NEXT_PUBLIC_MEDIA_HOSTS</code></th>

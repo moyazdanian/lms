@@ -8,6 +8,7 @@ export async function generateMetadata({ params }) {
   return {
     // Rendered through the root template as "LMS - <name>".
     title: instructor.name || "Instructor",
+    alternates: { canonical: `/instructors/${encodeURIComponent(id)}` },
   };
 }
 

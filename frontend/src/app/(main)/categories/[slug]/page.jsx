@@ -6,6 +6,7 @@ export async function generateMetadata({ params }) {
   return {
     // Rendered through the root template as "LMS - <category slug>".
     title: slug,
+    alternates: { canonical: `/categories/${encodeURIComponent(slug)}` },
   };
 }
 

@@ -19,12 +19,19 @@ export async function generateMetadata({ params }) {
   return {
     title: post.title,
     description: post.excerpt || undefined,
+    alternates: { canonical: `/blog/${encodeURIComponent(post.slug)}` },
     openGraph: {
       type: "article",
       title: post.title,
       description: post.excerpt || undefined,
       publishedTime: post.published_at || undefined,
       ...(post.cover_image ? { images: [{ url: post.cover_image }] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.excerpt || undefined,
+      ...(post.cover_image ? { images: [post.cover_image] } : {}),
     },
   };
 }

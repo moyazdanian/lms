@@ -117,6 +117,8 @@ services:
         # values are baked into the bundle, so a domain change needs a rebuild.
         NEXT_PUBLIC_API_PROD_URL: "https://${WEB_DOMAIN:-localhost}"
         NEXT_PUBLIC_API_URL: "https://${API_DOMAIN:-api.localhost}"
+        # Sitemap, robots.txt and canonical links point at the storefront.
+        NEXT_PUBLIC_SITE_URL: "https://${WEB_DOMAIN:-localhost}"
         NEXT_PUBLIC_MEDIA_HOSTS: "${NEXT_PUBLIC_MEDIA_HOSTS:-}"
         NEXT_IMAGE_UNOPTIMIZED: "1"
     restart: unless-stopped

@@ -9,6 +9,7 @@ export async function generateMetadata() {
 
   return {
     title: page?.terms_title || "Terms of Service",
+    alternates: { canonical: "/terms" },
   };
 }
 

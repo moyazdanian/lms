@@ -9,6 +9,7 @@ export async function generateMetadata() {
 
   return {
     title: consent?.banner_link_label || "Cookie Policy",
+    alternates: { canonical: "/cookie-policy" },
   };
 }
 

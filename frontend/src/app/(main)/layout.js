@@ -12,6 +12,7 @@ import { getFooter } from "@/lib/api/footer";
 import { getCookieConsentSafe } from "@/lib/api/legalPages";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { CookieConsent } from "@/components/ui/CookieConsent";
+import { siteUrl } from "@/lib/siteUrl";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,13 +37,36 @@ const geistMono = Geist_Mono({
 export async function generateMetadata() {
   const settings = await getSettingsSafe();
   const siteName = settings?.settings?.site_name || "LMS";
+  const logo = settings?.settings?.logo;
+  // No description field exists in the panel, so the default describes what
+  // the product is rather than echoing the brand twice.
+  const description = `Expert-led video courses, guided lessons and certificates on completion — learn at your own pace with ${siteName}.`;
 
   return {
+    // Every relative metadata URL below (canonical, social images) is resolved
+    // against this origin.
+    metadataBase: new URL(siteUrl),
+    description,
     // "Page - Site name" — child pages only set the page name and the
     // template appends the brand: "Create Course - LMS".
     title: {
       template: `${siteName} - %s`,
       default: siteName,
+    },
+    // Shared card for pages that do not write their own (course and blog
+    // detail pages override it).
+    openGraph: {
+      type: "website",
+      siteName,
+      title: siteName,
+      description,
+      ...(logo ? { images: [{ url: logo, alt: siteName }] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: siteName,
+      description,
+      ...(logo ? { images: [logo] } : {}),
     },
     // Only emitted when the admin uploaded a favicon; otherwise the
     // browser default / app/icon fallback applies.

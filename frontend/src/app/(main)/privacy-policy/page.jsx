@@ -9,6 +9,7 @@ export async function generateMetadata() {
 
   return {
     title: page?.privacy_title || "Privacy Policy",
+    alternates: { canonical: "/privacy-policy" },
   };
 }
 

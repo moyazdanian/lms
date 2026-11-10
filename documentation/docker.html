@@ -239,6 +239,11 @@ docker compose logs --tail=40 api caddy</code></pre>
                 <td><code>https://WEB_DOMAIN</code> — the storefront's own origin. Caddy forwards <code>/api</code> and <code>/sanctum</code> to Laravel, so the session and <code>XSRF-TOKEN</code> cookies stay first-party.</td>
               </tr>
               <tr>
+                <td><code>NEXT_PUBLIC_SITE_URL</code></td>
+                <td>SEO only: <code>/sitemap.xml</code>, <code>/robots.txt</code> and canonical/Open Graph links.</td>
+                <td><code>https://WEB_DOMAIN</code> — the storefront's public address, not the API host.</td>
+              </tr>
+              <tr>
                 <td><code>API_INTERNAL_URL</code></td>
                 <td>Server Components: the home page, course pages, legal pages.</td>
                 <td><code>http://api</code> — the service name on the compose network</td>
