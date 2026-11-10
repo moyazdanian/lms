@@ -1,25 +1,75 @@
-# secrets
+# ---------------------------------------------------------------------------
+# Secrets and local environment files.
+# Only the shipped *.example files belong in the repository.
+# ---------------------------------------------------------------------------
 .env
-localhost/.env
-frontend/.env
-frontend/.env.local
+.env.*
+!.env.example
+!.env.docker.example
+*.pem
+*.p12
+*.pfx
+auth.json
 
-# dependencies / build
-localhost/vendor
-frontend/node_modules
-frontend/.next
-
-# storage
+# ---------------------------------------------------------------------------
+# PHP / Laravel backend (localhost/)
+# ---------------------------------------------------------------------------
+localhost/vendor/
+localhost/bootstrap/cache/*.php
+!localhost/bootstrap/cache/.gitignore
+localhost/public/storage
+localhost/public/hot
+localhost/.phpunit.cache/
+localhost/.phpunit.result.cache
+localhost/_ide_helper.php
+localhost/_ide_helper_models.php
+localhost/.phpstorm.meta.php
 localhost/storage/app/*
 !localhost/storage/app/.gitignore
-localhost/storage/logs/*
+!localhost/storage/app/private/
+!localhost/storage/app/public/
+localhost/storage/app/private/*
+!localhost/storage/app/private/.gitignore
+localhost/storage/app/public/*
+!localhost/storage/app/public/.gitignore
 localhost/storage/framework/cache/data/*
-localhost/storage/framework/sessions/*
-localhost/storage/framework/views/*
-localhost/public/storage
+!localhost/storage/framework/cache/data/.gitignore
+localhost/storage/logs/*
+!localhost/storage/logs/.gitignore
 
-# dev junk
-.freebuff
+# ---------------------------------------------------------------------------
+# Node / Next.js storefront (frontend/)
+# ---------------------------------------------------------------------------
+node_modules/
+frontend/.next/
+frontend/out/
+frontend/.vercel/
+frontend/.turbo/
+
+# ---------------------------------------------------------------------------
+# Build and packaging output
+# ---------------------------------------------------------------------------
+dist/
+release/
+*.zip
+
+# ---------------------------------------------------------------------------
+# Local developer tooling and editor settings
+# ---------------------------------------------------------------------------
+.freebuff/
 .tmp-db-migrate*
 frontend;C
+.idea/
+*.iml
+*.code-workspace
+.DS_Store
+Thumbs.db
 *.log
+npm-debug.log*
+yarn-error.log*
+.php-cs-fixer.cache
+
+# Windows binaries and local TLS material that must never be committed.
+*.exe
+*.dll
+frontend/certificates/

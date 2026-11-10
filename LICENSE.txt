@@ -1,0 +1,131 @@
+LMS — Learning Management System
+Commercial License
+Version 1.0.0
+
+Copyright (c) 2026. All rights reserved.
+
+This file covers the licensing of the LMS source code ("the Item") and lists the
+third-party components it bundles. The Item is sold through Envato Market
+(CodeCanyon) under the Regular or Extended License, depending on which one you
+purchased. The Envato Market license terms are the binding agreement; the
+summary below describes how they apply to this Item.
+
+--------------------------------------------------------------------------------
+1. WHAT YOU MAY DO
+--------------------------------------------------------------------------------
+
+Regular License
+  - Use the Item to create one single End Product for yourself or for one
+    client.
+  - The End Product must not be sold, resold, licensed, rented or otherwise
+    charged for, in whole or in part, to more than one end user.
+
+Extended License
+  - Use the Item to create one single End Product for yourself or for one
+    client.
+  - The End Product may be sold to end users.
+  - The End Product may still be used for only one project: one installation per
+    license.
+
+In both cases you may modify the Item freely to build the End Product, and you
+may use the documentation as part of the delivered End Product.
+
+--------------------------------------------------------------------------------
+2. WHAT YOU MAY NOT DO
+--------------------------------------------------------------------------------
+
+  - Redistribute, share, publish or resell the Item's source code, in whole or in
+    part, as source code — including on public repositories, marketplaces, forums
+    or "nulled" or "free download" sites.
+  - Include the Item in another item, template, theme, starter kit or product
+    offered on any marketplace, or use it as the basis of a product whose value
+    comes primarily from this Item's code.
+  - Sub-license, rent, lease or lend the Item or any part of it.
+  - Remove, obscure or alter this license file, copyright notices, or author
+    attribution in the source.
+  - Use the Item in more than one End Product, or in more than one installation,
+    under a single license. Each additional End Product or installation needs its
+    own license.
+  - Claim authorship of the Item.
+
+--------------------------------------------------------------------------------
+3. THIRD-PARTY COMPONENTS
+--------------------------------------------------------------------------------
+
+The Item bundles open-source libraries that remain under their own licenses.
+Those licenses govern the libraries; the terms in sections 1 and 2 govern this
+Item's own code. The complete, exact list of shipped versions is in
+localhost/composer.lock and frontend/package-lock.json.
+
+Backend (PHP)
+  Laravel Framework ......................... MIT
+  Laravel Sanctum ........................... MIT
+  Laravel Socialite ......................... MIT
+  Laravel Breeze ............................ MIT
+  Laravel Tinker ............................ MIT
+  Filament .................................. MIT
+  guava/filament-icon-picker ................ MIT
+  barryvdh/laravel-dompdf ................... MIT
+  dompdf/dompdf ............................. LGPL-2.1
+  doctrine/dbal ............................. MIT
+  league/flysystem-aws-s3-v3 ................ MIT
+  stripe/stripe-php ......................... MIT
+
+Storefront (JavaScript)
+  Next.js, React, React DOM ................. MIT
+  Tailwind CSS, @tailwindcss/*, typography .. MIT
+  Radix UI primitives, radix-ui ............. MIT
+  TipTap (@tiptap/*) ........................ MIT
+  BlockNote (@blocknote/*) .................. MPL-2.0
+  DOMPurify ................................. MPL-2.0 OR Apache-2.0
+  KaTeX ..................................... MIT
+  Lucide icons .............................. ISC
+  Axios ..................................... MIT
+  Formik, Yup ............................... MIT
+  Chart.js, react-chartjs-2 ................. MIT
+  Recharts .................................. MIT
+  Sonner .................................... MIT
+  next-themes ............................... MIT
+  react-markdown, remark-*, rehype-* ........ MIT
+  Shiki ..................................... MIT
+  embla-carousel ............................ MIT
+
+Assets
+  Fonts published by Filament (Inter) are distributed under the SIL Open Font
+  License 1.1. Any additional fonts or illustrations shipped in
+  frontend/public or localhost/public keep the license stated alongside them.
+
+Where a bundled library's license requires that its notice be preserved
+(MPL-2.0 and LGPL-2.1 components), the original license texts are available in
+the respective package directories after dependency installation.
+
+--------------------------------------------------------------------------------
+4. NO WARRANTY
+--------------------------------------------------------------------------------
+
+THE ITEM IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR BE LIABLE
+FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE ITEM OR THE USE OR OTHER DEALINGS IN THE ITEM.
+
+Third-party services referenced by the Item (payment gateways, mail providers,
+S3-compatible storage, social login providers, hosting) are governed by their own
+terms and are not included in this license.
+
+--------------------------------------------------------------------------------
+5. SUPPORT
+--------------------------------------------------------------------------------
+
+Support covers installation assistance and defects in the delivered code.
+Customisation, third-party service setup, hosting, server administration and
+version upgrades beyond the documented update path are outside its scope.
+
+--------------------------------------------------------------------------------
+6. QUESTIONS ABOUT LICENSING
+--------------------------------------------------------------------------------
+
+If you need to use the Item in a way not described above — multiple
+installations, a SaaS reselling access, or inclusion in another product —
+purchase the appropriate license first, or contact the author through the
+CodeCanyon item page.

@@ -6,3 +6,14 @@ Dockerfile text eol=lf
 Dockerfile.* text eol=lf
 docker-compose*.yml text eol=lf
 *.yml text eol=lf
+
+# Files kept in the repository for development, but excluded from the
+# release package produced by `git archive` (see scripts/package.sh).
+/V1-RELEASE-PLAN.md export-ignore
+/scripts/ export-ignore
+/localhost/CLAUDE.md export-ignore
+/localhost/.cursor/ export-ignore
+/localhost/.mcp.json export-ignore
+/localhost/.vscode/ export-ignore
+/localhost/boost.json export-ignore
+/frontend/.vscode/ export-ignore
