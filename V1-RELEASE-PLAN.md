@@ -103,15 +103,15 @@ high: dompurify, sharp, js-cookie, follow-redirects, postcss,
 - `composer update --with-dependencies` + `composer audit` برای بک‌اند.
 - قفل نسخه‌ها در `package-lock.json` / `composer.lock` و کامیت آن‌ها.
 
+**وضعیت (۱۰ نوامبر):** بخشی انجام شد — `ai` و وابستگی‌های مستقیم استفاده‌نشده‌ی `@tiptap/*` و `@blocknote/mantine` حذف شدند، BlockNote به 0.57 و postcss به 8.5.32 ارتقا یافت و مجموع audit از ۶۰ به ۱۴ مورد رسید (۰ critical جز Next، ۰ high جز sharp). تصمیم فعلی: **Next روی 15.3.3 می‌ماند** (طبق نظر کارفرما) و این یعنی هشدار critical خود Next — شامل RCE بدون احراز هویت در Image Optimizer و مسموم‌سازی کش RSC — باز می‌ماند. `NEXT_IMAGE_UNOPTIMIZED=1` در Docker بخشی از این سطح حمله را می‌بندد، ولی RCE/کش/میان‌افزار نه. بازبینی این تصمیم قبل از انتشار لازم است.
+
 **معیار پذیرش:** `npm audit --omit=dev` بدون critical/high، `npm run lint` و `npm run build` سبز.
 
 #### ج) وبهوک Stripe در استقرار Docker
 
-در `docker-compose.yml` فقط `STRIPE_*` ارسال نمی‌شود و `StripeWebhookController` فقط از `config('services.stripe.webhook_secret')` می‌خواند؛ یعنی در نصب Docker وبهوک همیشه با خطای امضا رد می‌شود (پرداخت با صفحه verify انجام می‌شود، اما اگر کاربر تب را ببندد، سفارش pending می‌ماند).
+**انجام شد (۱۰ نوامبر):** به‌جای پاس دادن secret از طریق compose، خود سکرت هم به پنل ادمین منتقل شد — ستون `stripe_webhook_secret` در `general_settings` (migration جدید)، فیلد `Stripe Webhook Signing Secret` در Settings → Payment Gateways با نمایش آدرس endpoint، خواندن آن در `GatewayConfigService::stripe()` و در `StripeWebhookController` (با fallback به env برای نصب‌های قبلی). حالا نصب تازه هیچ ویرایش `.env` نمی‌خواهد و مقدار خالی با لاگ صریح رد می‌شود.
 
-- افزودن `STRIPE_WEBHOOK_SECRET` به `docker-compose.yml` (section `api.environment`).
-- افزودن آن به `.env.docker.example` با توضیح (URL وبهوک: `https://<API_DOMAIN>/api/v1/webhooks/stripe`).
-- ذکر در `documentation/docker.html` و `documentation/admin.html` (بخش Payment Gateways).
+- مستندسازی: `documentation/admin.html` (Payment Gateways)، `documentation/installation.html` (ورودی `STRIPE_*` به‌عنوان fallback) و `localhost/docs/STRIPE_WEBHOOK_SETUP.md` به‌روز شدند. ارسال secret از طریق compose لازم نیست و انجام نشد.
 
 **معیار پذیرش:** در نصب Docker، یک checkout تستی Stripe هم از مسیر verify و هم از مسیر وبهوک نهایی شود.
 
@@ -186,7 +186,7 @@ high: dompurify, sharp, js-cookie, follow-redirects, postcss,
 
 ### فاز ۱ — پایداری نصب و امنیت (۲ تا ۴ روز)
 1. ارتقای وابستگی‌ها + `npm audit`/`composer audit` پاک.
-2. `STRIPE_WEBHOOK_SECRET` در compose/example/docs.
+2. `STRIPE_WEBHOOK_SECRET` — انجام شد از طریق پنل ادمین (بدون نیاز به env).
 3. sanitize محتوای بلاگ + پاکسازی کد مرده.
 4. تست نصب Docker از صفر (بعد از رفع مشکل داکر سیستم) روی یک دایرکتوری تازه.
 
