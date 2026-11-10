@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>API reference — LMS Documentation</title>
+<meta name="description" content="Endpoint groups, authentication, rate limits, webhooks, the data model, and the test suite behind the LMS platform." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Source+Serif+4:opsz,wght@8..60,400..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+
+<header class="topbar">
+  <button class="rail-toggle" id="railToggle" type="button" aria-expanded="false" aria-controls="rail">Contents</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">LMS</span>
+    <span class="brand-text">Documentation</span>
+  </a>
+  <p class="topbar-meta">v1.0 &middot; October 2026</p>
+  <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+</header>
+
+<div class="shell">
+  <nav class="rail" id="rail" aria-label="Documentation contents">
+    <div class="rail-search">
+      <label class="sr-only" for="railFilter">Filter contents</label>
+      <input id="railFilter" type="search" placeholder="Filter sections" autocomplete="off" />
+      <p class="rail-empty" hidden>No section matches that.</p>
+    </div>
+    <ol class="chapters">
+      <li><a href="index.html"><span class="num">01</span> Overview</a></li>
+      <li><a href="installation.html"><span class="num">02</span> Installation</a></li>
+      <li><a href="students.html"><span class="num">03</span> Student experience</a></li>
+      <li><a href="instructors.html"><span class="num">04</span> Instructor workspace</a></li>
+      <li><a href="admin.html"><span class="num">05</span> Admin panel</a></li>
+      <li><a href="api.html" class="is-current" aria-current="page"><span class="num">06</span> API reference</a></li>
+      <li><a href="docker.html"><span class="num">07</span> Docker deployment</a></li>
+      <li><a href="deployment.html"><span class="num">08</span> Deploy to a server</a></li>
+    </ol>
+    <div class="rail-section" id="onThisPage" hidden>
+      <h2 class="rail-heading">On this page</h2>
+      <ul class="toc" id="toc"></ul>
+    </div>
+  </nav>
+
+  <main class="content" id="content">
+    <article class="chapter">
+      <header class="chapter-open">
+        <span class="chapter-num" aria-hidden="true">06</span>
+        <h1>API reference</h1>
+        <p class="chapter-lede">The REST layer every screen of the storefront is built on, grouped the way the routes are grouped: public, account, learning, and instructor.</p>
+        <p class="chapter-meta">Nine sections. Useful if you are extending the front end, writing an integration, or debugging why a request from the browser was refused.</p>
+      </header>
+
+      <section class="sec" id="basics">
+        <h2>Conventions</h2>
+        <p>Everything is served from one versioned prefix, returns JSON, and answers with a message on failure.</p>
+        <div class="table-wrap">
+          <table>
+            <tbody>
+              <tr>
+                <th scope="row">Base URL</th>
+                <td><code>{APP_URL}/api/v1</code></td>
+              </tr>
+              <tr>
+                <th scope="row">Format</th>
+                <td>JSON in and out. Course, lesson, and instructor uploads use <code>multipart/form-data</code>; every other write is JSON.</td>
+              </tr>
+              <tr>
+                <th scope="row">Errors</th>
+                <td><code>401</code> when not signed in, <code>403</code> when signed in without access to that resource, <code>422</code> with field errors on validation, <code>429</code> when rate limited, each with a human-readable <code>message</code>.</td>
+              </tr>
+              <tr>
+                <th scope="row">Pagination</th>
+                <td>List endpoints that paginate return the standard Laravel paginator shape: <code>data</code>, <code>current_page</code>, <code>last_page</code>, and <code>total</code>.</td>
+              </tr>
+              <tr>
+                <th scope="row">Authorization</th>
+                <td>Beyond authentication, model policies for courses, enrollments, orders, and payments decide what a request may touch — so an instructor cannot read another instructor's earnings, and a student cannot read another student's order.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Rate limits</h3>
+        <p>Limits are applied where guessing or scraping would be cheap. Exceeding one returns <code>429</code> with a message that says to try again later.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Limiter</th>
+                <th scope="col">Applies to</th>
+                <th scope="col">Limit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row"><code>auth</code></th>
+                <td>Sign-in, registration, password reset requests, Google redirect, instructor applications.</td>
+                <td>5 per minute per email and IP address</td>
+              </tr>
+              <tr>
+                <th scope="row"><code>reset-password</code></th>
+                <td>Changing a password while signed in.</td>
+                <td>1 per minute per email and IP address</td>
+              </tr>
+              <tr>
+                <th scope="row"><code>review</code></th>
+                <td>Submitting a course review.</td>
+                <td>1 per minute per email and IP address</td>
+              </tr>
+              <tr>
+                <th scope="row"><code>video-preview</code></th>
+                <td>Public course and lesson previews.</td>
+                <td>30 per minute per IP address, 200 per minute across the site</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="sec" id="auth">
+        <h2>Authentication</h2>
+        <p>The storefront authenticates with a session cookie rather than a token, which is why it can call the API directly from the browser without ever holding a credential.</p>
+        <ol class="steps">
+          <li>
+            <h3>Ask for the CSRF cookie</h3>
+            <div class="codeblock" data-label="Request">
+              <pre><code>GET {APP_URL}/sanctum/csrf-cookie</code></pre>
+            </div>
+            <p>The backend sets an <code>XSRF-TOKEN</code> cookie. Every write request must send it back as an <code>X-XSRF-TOKEN</code> header.</p>
+          </li>
+          <li>
+            <h3>Sign in</h3>
+            <div class="codeblock" data-label="Request">
+              <pre><code>POST {APP_URL}/api/v1/login
+Content-Type: application/json
+X-XSRF-TOKEN: {token from the cookie}
+
+{ "email": "student@example.com", "password": "…" }</code></pre>
+            </div>
+            <p>The response sets the session cookie. From then on, every request from that browser is authenticated as that user, and the cookie expires with the session like any other web session.</p>
+          </li>
+          <li>
+            <h3>Keep the token fresh</h3>
+            <p>A rotated CSRF token produces <code>419</code>. The storefront's HTTP client catches that once, re-fetches the CSRF cookie, and retries the request, so a user never sees the error.</p>
+          </li>
+        </ol>
+        <div class="note">
+          <span class="note-title">Server-to-server requests</span>
+          <p>Protected routes run through Sanctum, which also accepts personal access tokens. No token-issuing endpoint ships in v1 — if you need machine access, issue a token for a user through Sanctum's own tooling and send it as <code>Authorization: Bearer …</code>.</p>
+        </div>
+      </section>
+
+      <section class="sec" id="endpoints-public">
+        <h2>Public endpoints</h2>
+        <p>What the storefront reads before anyone signs in. All of these are safe to cache and none of them expose personal data.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Method</th>
+                <th scope="col">Path</th>
+                <th scope="col">Returns</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>GET</td><td><code>/settings</code></td><td>Site name, logo, favicon, and the other public settings.</td></tr>
+              <tr><td>GET</td><td><code>/settingsData</code></td><td>Courses grouped for the homepage sections.</td></tr>
+              <tr><td>GET</td><td><code>/site-content</code></td><td>Administrator-written homepage blocks.</td></tr>
+              <tr><td>GET</td><td><code>/footer</code></td><td>Footer columns, links, and social icons.</td></tr>
+              <tr><td>GET</td><td><code>/legal-pages/{slug}</code></td><td>The terms of service, privacy policy, and the cookie banner copy.</td></tr>
+              <tr><td>GET</td><td><code>/courses</code></td><td>Published courses with search, category, level, rating, price, and sort parameters.</td></tr>
+              <tr><td>GET</td><td><code>/courses/{slug}</code></td><td>One course with its curriculum, instructor, and rating.</td></tr>
+              <tr><td>GET</td><td><code>/courses/{slug}/sections/{section}/lessons/{lesson}</code></td><td>A single lesson's public metadata.</td></tr>
+              <tr><td>GET</td><td><code>/categories</code></td><td>Categories with course counts.</td></tr>
+              <tr><td>GET</td><td><code>/allcategories</code></td><td>The full category list, unfiltered.</td></tr>
+              <tr><td>GET</td><td><code>/categories/{slug}/courses</code></td><td>The catalog for one category.</td></tr>
+              <tr><td>GET</td><td><code>/instructors</code></td><td>Instructor directory.</td></tr>
+              <tr><td>GET</td><td><code>/instructor/{id}</code></td><td>One instructor's public profile.</td></tr>
+              <tr><td>GET</td><td><code>/review/{course_id}</code></td><td>Reviews for a course.</td></tr>
+              <tr><td>GET</td><td><code>/verify-certificate/{code}</code></td><td>Whether a certificate is valid, revoked, or unknown.</td></tr>
+              <tr><td>GET</td><td><code>/payment-methods</code></td><td>The gateways currently enabled for checkout.</td></tr>
+              <tr><td>GET</td><td><code>/courses/{slug}/video/preview</code></td><td>The course trailer, rate limited.</td></tr>
+              <tr><td>GET</td><td><code>/lessons/{lesson}/video/preview</code></td><td>A lesson the instructor marked as a free preview.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="sec" id="endpoints-account">
+        <h2>Account endpoints</h2>
+        <p>Authenticated routes in the students' and instructors' own area: identity, messaging, and data control.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Method</th>
+                <th scope="col">Path</th>
+                <th scope="col">Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>GET</td><td><code>/user</code></td><td>The signed-in user, used by the navigation and every route guard.</td></tr>
+              <tr><td>POST</td><td><code>/edit-profile</code></td><td>Name, email, avatar, and profile fields.</td></tr>
+              <tr><td>POST</td><td><code>/password-reset</code></td><td>Change the password of the signed-in account.</td></tr>
+              <tr><td>GET</td><td><code>/auth/social-accounts</code></td><td>Linked Google accounts.</td></tr>
+              <tr><td>DELETE</td><td><code>/auth/social-accounts/{id}</code></td><td>Unlink one, refused when it would leave no way to sign in.</td></tr>
+              <tr><td>GET</td><td><code>/notifications</code></td><td>In-app notifications.</td></tr>
+              <tr><td>POST</td><td><code>/notifications/{notification}/read</code></td><td>Mark one as read.</td></tr>
+              <tr><td>POST</td><td><code>/notifications/read-all</code></td><td>Mark everything as read.</td></tr>
+              <tr><td>GET</td><td><code>/tickets</code></td><td>The user's support tickets.</td></tr>
+              <tr><td>POST</td><td><code>/tickets</code></td><td>Open a ticket.</td></tr>
+              <tr><td>GET</td><td><code>/tickets/{ticket}</code></td><td>One ticket with its messages.</td></tr>
+              <tr><td>POST</td><td><code>/tickets/{ticket}/messages</code></td><td>Reply in the thread.</td></tr>
+              <tr><td>POST</td><td><code>/tickets/{ticket}/close</code></td><td>Close the ticket.</td></tr>
+              <tr><td>GET</td><td><code>/get-orders</code></td><td>Order history.</td></tr>
+              <tr><td>GET</td><td><code>/payments</code></td><td>Payment attempts with their status.</td></tr>
+              <tr><td>GET</td><td><code>/gdpr/export</code></td><td>Download the data held about the signed-in user.</td></tr>
+              <tr><td>DELETE</td><td><code>/gdpr/account</code></td><td>Delete the account and its personal data.</td></tr>
+              <tr><td>GET</td><td><code>/instructor-application</code></td><td>The current application, if any.</td></tr>
+              <tr><td>POST</td><td><code>/instructor-application</code></td><td>Apply to become an instructor.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="sec" id="endpoints-learning">
+        <h2>Learning and commerce endpoints</h2>
+        <p>The busiest part of the API: the cart, checkout, enrollment, the classroom, and assessment.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Method</th>
+                <th scope="col">Path</th>
+                <th scope="col">Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>GET</td><td><code>/cart</code></td><td>Cart contents and totals.</td></tr>
+              <tr><td>POST</td><td><code>/cart</code></td><td>Add a course.</td></tr>
+              <tr><td>DELETE</td><td><code>/cart/{id}</code></td><td>Remove one item.</td></tr>
+              <tr><td>DELETE</td><td><code>/cart</code></td><td>Empty the cart.</td></tr>
+              <tr><td>POST</td><td><code>/coupon-apply</code></td><td>Apply a coupon and get the discounted total.</td></tr>
+              <tr><td>GET</td><td><code>/coupon</code></td><td>The coupon currently applied.</td></tr>
+              <tr><td>DELETE</td><td><code>/coupon</code></td><td>Remove it.</td></tr>
+              <tr><td>GET</td><td><code>/wishlist</code></td><td>Wishlist with pagination.</td></tr>
+              <tr><td>GET</td><td><code>/wishlist/ids</code></td><td>Just the course IDs, for heart icons everywhere else.</td></tr>
+              <tr><td>POST</td><td><code>/wishlist</code></td><td>Add a course.</td></tr>
+              <tr><td>DELETE</td><td><code>/wishlist/{course_id}</code></td><td>Remove a course.</td></tr>
+              <tr><td>POST</td><td><code>/payment</code></td><td>Start checkout for a gateway and receive its redirect or session.</td></tr>
+              <tr><td>GET</td><td><code>/payment/verify</code></td><td>Verify a payment after returning from the gateway.</td></tr>
+              <tr><td>POST</td><td><code>/payments/cancel</code></td><td>Abandon an attempt.</td></tr>
+              <tr><td>POST</td><td><code>/courses/{course}/enroll</code></td><td>One-click enrollment in a free course.</td></tr>
+              <tr><td>GET</td><td><code>/course/{course}/check-enroll</code></td><td>Whether the viewer owns the course.</td></tr>
+              <tr><td>GET</td><td><code>/dashboard/courses</code></td><td>The student's courses with progress.</td></tr>
+              <tr><td>GET</td><td><code>/courses/{slug}/resume</code></td><td>The lesson to continue from.</td></tr>
+              <tr><td>GET</td><td><code>/lessons/{lesson}/video</code></td><td>The lesson stream, authorized per student.</td></tr>
+              <tr><td>GET</td><td><code>/lessons/{lesson}/attachments</code></td><td>Attachments on a lesson.</td></tr>
+              <tr><td>GET</td><td><code>/lessons/{lesson}/attachments/{attachment}/download</code></td><td>Authorized download.</td></tr>
+              <tr><td>POST</td><td><code>/lessons/{lesson}/progress</code></td><td>Report watched seconds and status.</td></tr>
+              <tr><td>GET</td><td><code>/user/lesson-progress/{lesson}</code></td><td>Progress for one lesson.</td></tr>
+              <tr><td>GET</td><td><code>/courses/{slug}/quiz</code></td><td>The quiz for an enrolled student.</td></tr>
+              <tr><td>POST</td><td><code>/courses/{slug}/quiz/attempts</code></td><td>Submit answers and get them graded.</td></tr>
+              <tr><td>GET</td><td><code>/courses/{slug}/quiz/attempts</code></td><td>Attempt history.</td></tr>
+              <tr><td>GET</td><td><code>/courses/{slug}/quiz/review</code></td><td>A marked attempt with explanations.</td></tr>
+              <tr><td>GET</td><td><code>/courses/{slug}/certificate-eligibility</code></td><td>Whether a certificate can be issued yet.</td></tr>
+              <tr><td>GET</td><td><code>/my-certificates</code></td><td>Issued certificates.</td></tr>
+              <tr><td>GET</td><td><code>/certificates/{code}/download</code></td><td>The certificate PDF.</td></tr>
+              <tr><td>POST</td><td><code>/review</code></td><td>Submit a review, refused unless enrolled.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="sec" id="endpoints-instructor">
+        <h2>Instructor endpoints</h2>
+        <p>Everything under <code>/instructor</code> requires the instructor or administrator role and an active instructor profile, so a suspended instructor is locked out of authoring and money at once.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Method</th>
+                <th scope="col">Path</th>
+                <th scope="col">Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>GET / POST</td><td><code>/instructor/courses</code></td><td>List and create courses.</td></tr>
+              <tr><td>GET / POST / DELETE</td><td><code>/instructor/courses/{course}</code></td><td>Read, update (multipart), and delete one course.</td></tr>
+              <tr><td>GET</td><td><code>/instructor/courses/{course}/preview-video</code></td><td>The course trailer for the authoring preview.</td></tr>
+              <tr><td>POST</td><td><code>/instructor/courses/{course}/sections</code></td><td>Add a section.</td></tr>
+              <tr><td>PUT / DELETE</td><td><code>/instructor/sections/{section}</code></td><td>Rename, reorder, or remove a section.</td></tr>
+              <tr><td>POST</td><td><code>/instructor/sections/{section}/lessons</code></td><td>Add a lesson.</td></tr>
+              <tr><td>POST / DELETE</td><td><code>/instructor/lessons/{lesson}</code></td><td>Update or remove a lesson.</td></tr>
+              <tr><td>GET / POST</td><td><code>/instructor/lessons/{lesson}/attachments</code></td><td>List and upload attachments.</td></tr>
+              <tr><td>POST / DELETE</td><td><code>/instructor/attachments/{attachment}</code></td><td>Update or remove an attachment.</td></tr>
+              <tr><td>GET</td><td><code>/instructor/courses/{course}/quiz</code></td><td>The quiz as authored.</td></tr>
+              <tr><td>POST</td><td><code>/instructor/courses/{course}/quiz</code></td><td>Save the quiz settings, questions, and options.</td></tr>
+              <tr><td>GET / POST</td><td><code>/instructor/instructor-profile</code></td><td>Read and update the public instructor profile.</td></tr>
+              <tr><td>GET</td><td><code>/instructor/earnings</code></td><td>Balance and earnings ledger.</td></tr>
+              <tr><td>GET</td><td><code>/instructor/earnings/chart</code></td><td>Revenue over time.</td></tr>
+              <tr><td>GET</td><td><code>/instructor/sales/chart</code></td><td>Sales over time.</td></tr>
+              <tr><td>GET</td><td><code>/instructor/enrollment/chart</code></td><td>Enrollments over time.</td></tr>
+              <tr><td>GET</td><td><code>/instructor/top-performing-courses</code></td><td>Best earners.</td></tr>
+              <tr><td>GET</td><td><code>/instructor/recent-sales</code></td><td>Latest purchases.</td></tr>
+              <tr><td>GET</td><td><code>/instructor/instructor-sales</code></td><td>Full sales list with course and date filters.</td></tr>
+              <tr><td>GET</td><td><code>/instructor/course-options</code></td><td>Course list for the sales filter.</td></tr>
+              <tr><td>GET / POST</td><td><code>/instructor/payout-requests</code></td><td>Payout history and a new request.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="sec" id="webhooks">
+        <h2>Webhooks</h2>
+        <p>Two endpoints exist for gateways to call the site, and they are the reason a payment completes even when the customer never returns to the browser.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Method</th>
+                <th scope="col">Path</th>
+                <th scope="col">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>POST</td>
+                <td><code>/webhooks/stripe</code></td>
+                <td>Signature verified against the Stripe webhook secret before anything is applied.</td>
+              </tr>
+              <tr>
+                <td>POST</td>
+                <td><code>/webhooks/mollie</code></td>
+                <td>The payment is re-fetched from Mollie and verified before the order is finalized.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Both are exempt from CSRF protection, which is what allows an external service to post to them, and a request that fails signature verification is rejected without touching an order.</p>
+      </section>
+
+      <section class="sec" id="data-model">
+        <h2>Data model</h2>
+        <p>Thirty-five migrations, grouped by what they belong to. Knowing the groups is enough to find your way around the schema.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Group</th>
+                <th scope="col">Tables</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Accounts</th>
+                <td><code>users</code>, <code>social_accounts</code>, <code>personal_access_tokens</code>, <code>notifications</code>, <code>admin_notifications</code>, <code>support_tickets</code>, <code>support_ticket_messages</code></td>
+              </tr>
+              <tr>
+                <th scope="row">Instructors</th>
+                <td><code>instructor_applications</code>, <code>instructors_profiles</code>, <code>instructor_earnings</code>, <code>instructor_earning_allocations</code>, <code>payout_requests</code></td>
+              </tr>
+              <tr>
+                <th scope="row">Catalog</th>
+                <td><code>categories</code>, <code>courses</code>, <code>sections</code>, <code>lessons</code>, <code>lesson_resources</code>, <code>reviews</code>, <code>wishlists</code></td>
+              </tr>
+              <tr>
+                <th scope="row">Commerce</th>
+                <td><code>cart_items</code>, <code>orders</code>, <code>order_items</code>, <code>payments</code>, <code>coupons</code>, <code>coupon_usages</code>, <code>enrollments</code></td>
+              </tr>
+              <tr>
+                <th scope="row">Learning</th>
+                <td><code>lesson_progresses</code>, <code>quizzes</code>, <code>quiz_questions</code>, <code>quiz_options</code>, <code>quiz_attempts</code>, <code>certificates</code></td>
+              </tr>
+              <tr>
+                <th scope="row">Content</th>
+                <td><code>site_contents</code>, <code>general_settings</code>, <code>legal_pages</code>, <code>footer</code></td>
+              </tr>
+              <tr>
+                <th scope="row">Approvals</th>
+                <td><code>course_edit_requests</code>, plus the approval columns on <code>courses</code> that drive the publish workflow.</td>
+              </tr>
+              <tr>
+                <th scope="row">Infrastructure</th>
+                <td><code>cache</code>, <code>jobs</code>, <code>sessions</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="sec" id="tests">
+        <h2>Tests</h2>
+        <p>The backend ships with a Pest suite covering the parts where a silent mistake costs money: checkout and pricing, the approval workflow, payouts and commissions, media authorization, certificates, and authentication.</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>cd localhost
+
+# the whole suite
+php artisan test
+
+# one file
+php artisan test tests/Feature/PayoutWorkflowTest.php
+
+# by test name
+php artisan test --filter=checkout</code></pre>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Test file</th>
+                <th scope="col">Covers</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>OrderCheckoutTest</code></td><td>Cart to order to payment, including zero-total carts.</td></tr>
+              <tr><td><code>FreeEnrollmentTest</code></td><td>One-click enrollment in free courses.</td></tr>
+              <tr><td><code>MarketplaceAccountingTest</code></td><td>Commission split and the earnings ledger.</td></tr>
+              <tr><td><code>PayoutWorkflowTest</code></td><td>Request, approve, pay, and reject.</td></tr>
+              <tr><td><code>PayoutPartialAmountTest</code></td><td>Withdrawing part of an earning.</td></tr>
+              <tr><td><code>CourseApprovalWorkflowTest</code></td><td>Submit, approve, reject, and edit requests.</td></tr>
+              <tr><td><code>LessonVideoAccessTest</code></td><td>Who may stream a lesson video.</td></tr>
+              <tr><td><code>LessonAttachmentTest</code></td><td>Attachment upload and authorized download.</td></tr>
+              <tr><td><code>CertificateRevocationRetakeTest</code></td><td>Issuing, revoking, and re-earning a certificate.</td></tr>
+              <tr><td><code>LegalPagesTest</code></td><td>The admin-written terms, privacy, and cookie text.</td></tr>
+              <tr><td><code>StorageSettingsTest</code>, <code>S3ConnectionTest</code>, <code>StorageReportTest</code></td><td>Media disks, bucket credentials, and the storage report.</td></tr>
+              <tr><td><code>AuthCookieTest</code>, <code>SocialAuthTest</code></td><td>Cookie sessions and Google sign-in.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Tests run against a separate <code>lms_testing</code> MySQL schema with migrations applied automatically, so they never touch your development data. Create it once with <code>CREATE DATABASE lms_testing;</code> before the first run. Run <code>vendor/bin/pint</code> to match the project's code style after making changes.</p>
+      </section>
+    </article>
+
+    <nav class="pager" aria-label="Chapter navigation">
+      <a class="prev" href="admin.html">
+        <span class="pager-dir">Previous chapter</span>
+        Admin panel
+      </a>
+      <a class="next" href="docker.html">
+        <span class="pager-dir">Next chapter</span>
+        Docker deployment
+      </a>
+    </nav>
+  </main>
+</div>
+
+<footer class="site-foot">
+  <div class="foot-inner">
+    <span>LMS platform documentation &middot; v1.0 &middot; October 2026</span>
+    <a href="index.html">Overview</a>
+    <a href="installation.html">Installation</a>
+    <a href="students.html">Students</a>
+    <a href="instructors.html">Instructors</a>
+    <a href="admin.html">Admin</a>
+    <a href="docker.html">Docker</a>
+    <a href="deployment.html">Deploy</a>
+  </div>
+</footer>
+
+<script src="assets/js/main.js" defer></script>
+</body>
+</html>

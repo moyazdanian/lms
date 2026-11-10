@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Installation — LMS Documentation</title>
+<meta name="description" content="Server requirements, backend and storefront setup, environment reference, media storage, first-run settings, and troubleshooting for the LMS platform." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Source+Serif+4:opsz,wght@8..60,400..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+
+<header class="topbar">
+  <button class="rail-toggle" id="railToggle" type="button" aria-expanded="false" aria-controls="rail">Contents</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">LMS</span>
+    <span class="brand-text">Documentation</span>
+  </a>
+  <p class="topbar-meta">v1.0 &middot; October 2026</p>
+  <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+</header>
+
+      <div class="note">
+        <span class="note-title">Prefer one command?</span>
+        <p>The whole stack also runs in containers: see <a href="docker.html">Docker deployment</a>. Everything below is still the right path when your host has no Docker.</p>
+      </div>
+
+<div class="shell">
+  <nav class="rail" id="rail" aria-label="Documentation contents">
+    <div class="rail-search">
+      <label class="sr-only" for="railFilter">Filter contents</label>
+      <input id="railFilter" type="search" placeholder="Filter sections" autocomplete="off" />
+      <p class="rail-empty" hidden>No section matches that.</p>
+    </div>
+    <ol class="chapters">
+      <li><a href="index.html"><span class="num">01</span> Overview</a></li>
+      <li><a href="installation.html" class="is-current" aria-current="page"><span class="num">02</span> Installation</a></li>
+      <li><a href="students.html"><span class="num">03</span> Student experience</a></li>
+      <li><a href="instructors.html"><span class="num">04</span> Instructor workspace</a></li>
+      <li><a href="admin.html"><span class="num">05</span> Admin panel</a></li>
+      <li><a href="api.html"><span class="num">06</span> API reference</a></li>
+      <li><a href="docker.html"><span class="num">07</span> Docker deployment</a></li>
+      <li><a href="deployment.html"><span class="num">08</span> Deploy to a server</a></li>
+    </ol>
+    <div class="rail-section" id="onThisPage" hidden>
+      <h2 class="rail-heading">On this page</h2>
+      <ul class="toc" id="toc"></ul>
+    </div>
+  </nav>
+
+  <main class="content" id="content">
+    <article class="chapter">
+      <header class="chapter-open">
+        <span class="chapter-num" aria-hidden="true">02</span>
+        <h1>Installation</h1>
+        <p class="chapter-lede">Get both applications running locally, then turn the site into your own: name, logo, gateways, storage, and the texts your visitors read before they buy.</p>
+        <p class="chapter-meta">Eight sections. The fastest path is to follow the two install lists in order; the environment and media sections explain the values you are pasting in.</p>
+      </header>
+
+      <section class="sec" id="requirements">
+        <h2>What you need</h2>
+        <p>Both applications can run on a single small server. Nothing here needs Redis, a message queue service, or a CDN.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Requirement</th>
+                <th scope="col">Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">PHP 8.2+</th>
+                <td>With the standard Laravel extensions: <code>ctype</code>, <code>curl</code>, <code>dom</code>, <code>fileinfo</code>, <code>filter</code>, <code>hash</code>, <code>mbstring</code>, <code>openssl</code>, <code>pdo</code>, <code>session</code>, <code>tokenizer</code>, <code>xml</code>. Add <code>gd</code> if certificates should embed images.</td>
+              </tr>
+              <tr>
+                <th scope="row">Composer 2</th>
+                <td>For the backend dependencies.</td>
+              </tr>
+              <tr>
+                <th scope="row">Node.js 18.18+</th>
+                <td>Node 20 or 22 LTS recommended. The storefront is built with <code>npm</code>.</td>
+              </tr>
+              <tr>
+                <th scope="row">Database</th>
+                <td>MySQL 8 or MariaDB 10.4+ (required). The Docker stack starts its own MySQL; on a manual install, run one yourself and create an empty database.</td>
+              </tr>
+              <tr>
+                <th scope="row">Web server</th>
+                <td>Anything that serves PHP, with the document root pointing at the Laravel <code>public/</code> directory. <code>php artisan serve</code> is enough while developing.</td>
+              </tr>
+              <tr>
+                <th scope="row">Disk space</th>
+                <td>Roughly 500 MB for code and dependencies, plus whatever your video library needs. Moving media to a bucket keeps the server small.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Optional services</h3>
+        <p>Each of these unlocks a feature and can be added later, one at a time:</p>
+        <ul>
+          <li><strong>Payment gateway accounts</strong> — Stripe, PayPal, Mollie, or Razorpay. Without one, only free and fully discounted courses can be taken.</li>
+          <li><strong>SMTP credentials</strong> — email verification, password resets, and instructor notifications. Without them, mail is written to <code>storage/logs/laravel.log</code>.</li>
+          <li><strong>An S3-compatible bucket</strong> — AWS S3, Cloudflare R2, MinIO, DigitalOcean Spaces, or Wasabi, for lesson videos and attachments.</li>
+          <li><strong>Google OAuth client</strong> — the "continue with Google" button on the sign-in page.</li>
+        </ul>
+      </section>
+
+      <section class="sec" id="backend">
+        <h2>Install the backend</h2>
+        <p>Run everything below from inside the <code>localhost/</code> folder — that folder is the Laravel application root.</p>
+
+        <ol class="steps">
+          <li>
+            <h3>Install the PHP dependencies</h3>
+            <div class="codeblock" data-label="Terminal">
+              <pre><code>cd localhost
+composer install</code></pre>
+            </div>
+            <p>Add <code>--no-dev --optimize-autoloader</code> on a production server.</p>
+          </li>
+
+          <li>
+            <h3>Create the environment file</h3>
+            <div class="codeblock" data-label="Terminal">
+              <pre><code>cp .env.example .env
+php artisan key:generate</code></pre>
+            </div>
+            <p>The next two sections explain which values to change: the database now, everything else as you need it.</p>
+          </li>
+
+          <li>
+            <h3>Point it at your database</h3>
+            <p>Create an empty database and a user that can write to it, then set the database block in <code>.env</code>:</p>
+            <div class="codeblock" data-label=".env">
+              <pre><code>DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=lms
+DB_USERNAME=lms_user
+DB_PASSWORD=</code></pre>
+            </div>
+            <p>Leave <code>QUEUE_CONNECTION</code>, <code>CACHE_STORE</code>, and <code>SESSION_DRIVER</code> as they are — all three use the database and need no extra service.</p>
+          </li>
+
+          <li>
+            <h3>Create the tables and seed the starting content</h3>
+            <div class="codeblock" data-label="Terminal">
+              <pre><code>php artisan migrate --seed</code></pre>
+            </div>
+            <p>The seeders create the homepage content blocks, the feature list shown on the landing page, and one administrator account.</p>
+            <div class="warn">
+              <span class="note-title">Choose the administrator credentials before seeding</span>
+              <p>The account comes from <code>ADMIN_EMAIL</code> and <code>ADMIN_PASSWORD</code> in <code>.env</code>, and both are required: the seeder throws an error instead of inventing a password or falling back to a shipped account. No installation shares credentials with another.</p>
+            </div>
+          </li>
+
+          <li>
+            <h3>Link the public storage directory</h3>
+            <div class="codeblock" data-label="Terminal">
+              <pre><code>php artisan storage:link</code></pre>
+            </div>
+            <p>This makes files on the public disk — the logo and favicon you upload in the panel — reachable from the browser.</p>
+          </li>
+
+          <li>
+            <h3>Start it and sign in</h3>
+            <div class="codeblock" data-label="Terminal">
+              <pre><code>php artisan serve</code></pre>
+            </div>
+            <p>The API answers on <code>http://localhost:8000/api/v1</code> and the admin panel on <code>http://localhost:8000/admin</code>. Sign in with the administrator account you seeded.</p>
+            <p>Keep a queue worker running whenever queued mail and notifications matter, in a second terminal during development:</p>
+            <div class="codeblock" data-label="Terminal">
+              <pre><code>php artisan queue:work</code></pre>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="sec" id="env-reference">
+        <h2>Environment reference</h2>
+        <p>Every value below lives in <code>localhost/.env</code>. The ones marked as required for the storefront are what make cookie login work; getting them wrong shows up as a 419 error on the sign-in page.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Key</th>
+                <th scope="col">What it does</th>
+                <th scope="col">Local development</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row"><code>APP_URL</code></th>
+                <td>The backend's own address. Used for OAuth callbacks, webhook URLs, and certificate links.</td>
+                <td><code>http://localhost:8000</code></td>
+              </tr>
+              <tr>
+                <th scope="row"><code>FRONTEND_URL</code></th>
+                <td>Where the browser is sent back to after Google sign-in.</td>
+                <td><code>http://localhost:3000</code></td>
+              </tr>
+              <tr>
+                <th scope="row"><code>SANCTUM_STATEFUL_DOMAINS</code></th>
+                <td>Hosts allowed to log in with the session cookie. Must contain the exact host and port of the storefront, or sign-in silently fails.</td>
+                <td><code>localhost,localhost:3000,127.0.0.1:3000</code></td>
+              </tr>
+              <tr>
+                <th scope="row"><code>CORS_ALLOWED_ORIGINS</code></th>
+                <td>Origins allowed to call the API from the browser. Must match the storefront origin.</td>
+                <td><code>http://localhost:3000</code></td>
+              </tr>
+              <tr>
+                <th scope="row"><code>SESSION_DOMAIN</code></th>
+                <td>Cookie scope. Leave as <code>null</code> when the two apps run on different ports; use <code>.example.com</code> when they share a domain.</td>
+                <td><code>null</code></td>
+              </tr>
+              <tr>
+                <th scope="row"><code>SESSION_SECURE_COOKIE</code></th>
+                <td>Send the session cookie over HTTPS only. Turn on in production.</td>
+                <td><code>false</code></td>
+              </tr>
+              <tr>
+                <th scope="row"><code>LESSON_VIDEO_DISK</code></th>
+                <td>Where lesson videos and previews are stored: <code>private</code> (local), <code>public</code>, <code>videos</code>, or <code>s3</code>.</td>
+                <td><code>private</code></td>
+              </tr>
+              <tr>
+                <th scope="row"><code>LESSON_ATTACHMENT_DISK</code></th>
+                <td>Downloads attached to lessons. Optional — falls back to the video disk.</td>
+                <td>unset (shares video disk)</td>
+              </tr>
+              <tr>
+                <th scope="row"><code>VIDEO_SERVING_MODE</code></th>
+                <td><code>proxy</code> streams bytes through PHP; <code>signed</code> redirects the browser to a time-limited bucket URL.</td>
+                <td><code>proxy</code></td>
+              </tr>
+              <tr>
+                <th scope="row"><code>AWS_*</code></th>
+                <td>Key, secret, region, bucket, and optional endpoint for an S3-compatible bucket. Required when the video disk is <code>s3</code>.</td>
+                <td>empty</td>
+              </tr>
+              <tr>
+                <th scope="row"><code>STRIPE_*</code></th>
+                <td>Secret key, publishable key, and webhook signing secret. PayPal, Mollie, and Razorpay keys are stored in the admin panel instead.</td>
+                <td>empty</td>
+              </tr>
+              <tr>
+                <th scope="row"><code>GOOGLE_CLIENT_ID</code> / <code>GOOGLE_CLIENT_SECRET</code></th>
+                <td>Fallback for Google sign-in. Values saved in the panel take priority.</td>
+                <td>empty</td>
+              </tr>
+              <tr>
+                <th scope="row"><code>MAIL_*</code></th>
+                <td>Mail transport and sender address.</td>
+                <td><code>log</code> (writes to the log instead of sending)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note">
+          <span class="note-title">After editing .env</span>
+          <p>Laravel caches configuration. When a change does not seem to take effect, run <code>php artisan optimize:clear</code> and reload.</p>
+        </div>
+      </section>
+
+      <section class="sec" id="media">
+        <h2>Where lesson media lives</h2>
+        <p>Videos and attachments are stored on a disk that is not publicly reachable, and delivered only to people who are allowed to watch them. Two decisions control that.</p>
+
+        <h3>The disk</h3>
+        <p><code>private</code> keeps files on the server under the private storage directory, which is the simplest setup and costs nothing. Switching <code>LESSON_VIDEO_DISK</code> to <code>s3</code> moves new uploads to a bucket — any S3-compatible provider works, and the endpoints for R2, MinIO, and Spaces are listed in <code>.env.example</code>.</p>
+        <div class="warn">
+          <span class="note-title">The bucket must stay private</span>
+          <p>Do not mark the bucket public or give it a public base URL: lesson videos would then be downloadable by anyone who guesses a path. The application either streams the bytes itself or issues a short-lived signed URL.</p>
+        </div>
+
+        <h3>How video reaches the browser</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Mode</th>
+                <th scope="col">Behaviour</th>
+                <th scope="col">When to use it</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row"><code>proxy</code></th>
+                <td>PHP streams the file after checking that the viewer is enrolled. Videos stay on their private disk and no URL is ever exposed.</td>
+                <td>Default. Best for small audiences and local disks.</td>
+              </tr>
+              <tr>
+                <th scope="row"><code>signed</code></th>
+                <td>The API redirects to a bucket URL that expires after <code>VIDEO_SIGNED_URL_TTL</code> minutes (30 by default). Bandwidth goes straight from the bucket to the viewer.</td>
+                <td>Production with a bucket and real traffic. Falls back to proxying automatically when the disk cannot sign URLs.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Moving existing files to a bucket</h3>
+        <p>Uploads made before the switch stay where they were. Copy them across with the included command, then set the disk to <code>s3</code>:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>php artisan media:migrate-to-cloud --target=s3</code></pre>
+        </div>
+        <p>The admin panel's <strong>Storage</strong> page mirrors all of these settings and writes them back to the same configuration, with a connection test and a report of what is stored where. Values saved in the panel take priority over the <code>.env</code> entries.</p>
+      </section>
+
+      <section class="sec" id="frontend">
+        <h2>Install the storefront</h2>
+        <p>Run these from the <code>frontend/</code> folder.</p>
+
+        <ol class="steps">
+          <li>
+            <h3>Install the Node dependencies</h3>
+            <div class="codeblock" data-label="Terminal">
+              <pre><code>npm install</code></pre>
+            </div>
+          </li>
+
+          <li>
+            <h3>Create the environment file</h3>
+            <div class="codeblock" data-label="frontend/.env.local">
+              <pre><code>NEXT_PUBLIC_API_PROD_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_MEDIA_HOSTS=</code></pre>
+            </div>
+            <p>Both values are the backend origin only — the <code>/api/v1</code> part is added by the code, so including it here produces 404s.</p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Variable</th>
+                    <th scope="col">Purpose</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th scope="row"><code>NEXT_PUBLIC_API_PROD_URL</code></th>
+                    <td>Base URL for every API call, including the CSRF cookie request.</td>
+                  </tr>
+                  <tr>
+                    <th scope="row"><code>NEXT_PUBLIC_API_URL</code></th>
+                    <td>Allows images served by the backend to load through <code>next/image</code>.</td>
+                  </tr>
+                  <tr>
+                    <th scope="row"><code>NEXT_PUBLIC_MEDIA_HOSTS</code></th>
+                    <td>Comma-separated extra hosts for images that come straight from a bucket or CDN, for example <code>my-bucket.s3.eu-west-1.amazonaws.com</code>. Leave empty when the backend serves them.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="warn">
+              <span class="note-title">These are baked in at build time</span>
+              <p>Next.js inlines <code>NEXT_PUBLIC_*</code> values when the app is built. Restart the development server after editing <code>.env.local</code>, and rebuild before deploying a change.</p>
+            </div>
+          </li>
+
+          <li>
+            <h3>Run it</h3>
+            <div class="codeblock" data-label="Terminal">
+              <pre><code>npm run dev</code></pre>
+            </div>
+            <p>The site is on <code>http://localhost:3000</code>. Use <code>npm run dev:tls</code> instead if you need an HTTPS development origin — some gateways and OAuth providers insist on it.</p>
+            <p>For production:</p>
+            <div class="codeblock" data-label="Terminal">
+              <pre><code>npm run build
+npm start</code></pre>
+            </div>
+          </li>
+        </ol>
+
+        <div class="note">
+          <span class="note-title">Build with the backend reachable</span>
+          <p>Several public pages are server-rendered with live API data, and <code>npm run build</code> pre-renders them. If the backend is not running at build time, the build stops on a <code>fetch failed</code> error for a page such as <code>/instructors</code>. Start the API first.</p>
+        </div>
+      </section>
+
+      <section class="sec" id="first-run">
+        <h2>First run in the admin panel</h2>
+        <p>With both applications running and an administrator signed in at <code>/admin</code>, work down this list. Each row is a page in the panel; the last chapter describes every page in detail.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Panel page</th>
+                <th scope="col">What to set</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Settings &rarr; General Settings</th>
+                <td>Site name (used in page titles, the footer, the panel brand, and certificates), logo, favicon.</td>
+              </tr>
+              <tr>
+                <th scope="row">Settings &rarr; Payment Gateways</th>
+                <td>Enable the gateways you use and paste their keys. Register the Stripe webhook at <code>{APP_URL}/api/v1/webhooks/stripe</code> and the Mollie one at <code>{APP_URL}/api/v1/webhooks/mollie</code>.</td>
+              </tr>
+              <tr>
+                <th scope="row">Settings &rarr; Payout Methods</th>
+                <td>Instructor commission percentage, the minimum payout amount, and the payout methods instructors may choose from.</td>
+              </tr>
+              <tr>
+                <th scope="row">Settings &rarr; Social Login</th>
+                <td>Google client ID and secret. Register <code>{APP_URL}/auth/google/callback</code> as the redirect URI in the Google console — the panel shows the exact value to copy.</td>
+              </tr>
+              <tr>
+                <th scope="row">Settings &rarr; Storage</th>
+                <td>Lesson media disk, delivery mode, and bucket credentials. Use the connection test before uploading a large course.</td>
+              </tr>
+              <tr>
+                <th scope="row">Content &rarr; Homepage Content</th>
+                <td>The landing page sections and their text and images.</td>
+              </tr>
+              <tr>
+                <th scope="row">Content &rarr; Footer</th>
+                <td>Footer columns, links, and social icons.</td>
+              </tr>
+              <tr>
+                <th scope="row">Content &rarr; Terms &amp; Privacy</th>
+                <td>The terms of service and privacy policy, each with its own title and rich-text body. They render at <code>/terms</code> and <code>/privacy-policy</code>.</td>
+              </tr>
+              <tr>
+                <th scope="row">Content &rarr; Cookie Consent</th>
+                <td>The consent banner: heading, body, button labels, and the label of the cookie policy link.</td>
+              </tr>
+              <tr>
+                <th scope="row">Courses &rarr; Categories</th>
+                <td>At least one category before courses can be published.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="sec" id="production">
+        <h2>Going live</h2>
+        <p>Work through this before pointing a domain at the installation.</p>
+        <ul>
+          <li>Set <code>APP_ENV=production</code>, <code>APP_DEBUG=false</code>, and real HTTPS values for <code>APP_URL</code>, <code>FRONTEND_URL</code>, <code>SANCTUM_STATEFUL_DOMAINS</code>, and <code>CORS_ALLOWED_ORIGINS</code>. Turn on <code>SESSION_SECURE_COOKIE</code>.</li>
+          <li>Point the web server's document root at the Laravel <code>public/</code> folder, never at the application root.</li>
+          <li>Build the storefront with production API URLs, then run it behind the same TLS setup.</li>
+          <li>Run <code>composer install --no-dev --optimize-autoloader</code> and <code>php artisan optimize</code> on the server.</li>
+          <li>Keep one queue worker alive under a process supervisor, for example <code>php artisan queue:work --tries=3 --timeout=120</code>, and restart it on each deploy.</li>
+          <li>Register the scheduler with a single cron entry: <code>* * * * * cd /path/to/app &amp;&amp; php artisan schedule:run &gt;&gt; /dev/null 2&gt;&amp;1</code>.</li>
+          <li>Register both webhook endpoints with the gateways you enabled, and send a test event to confirm they are accepted.</li>
+          <li>Move lesson media to a private bucket, then verify playback and a download as an enrolled student.</li>
+          <li>Schedule backups of the database and the bucket. Certificates and orders live in the database; losing either is unrecoverable.</li>
+        </ul>
+      </section>
+
+      <section class="sec" id="troubleshooting">
+        <h2>When something does not work</h2>
+        <p>The failures below cover almost every setup problem reported at this stage.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Symptom</th>
+                <th scope="col">Cause and fix</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Sign-in returns 419, or the account is "unauthenticated" right after logging in</th>
+                <td>The storefront origin is not trusted by the backend. Add the exact host and port to <code>SANCTUM_STATEFUL_DOMAINS</code> and <code>CORS_ALLOWED_ORIGINS</code>, make sure <code>FRONTEND_URL</code> matches, then run <code>php artisan optimize:clear</code>.</td>
+              </tr>
+              <tr>
+                <th scope="row">Uploaded images from a bucket never appear</th>
+                <td>Their host is not in the image allow-list. Add it to <code>NEXT_PUBLIC_MEDIA_HOSTS</code> and restart or rebuild the storefront — <code>next.config.mjs</code> reads this file at startup.</td>
+              </tr>
+              <tr>
+                <th scope="row">A lesson video returns 404 or 403</th>
+                <td>The file is not on the configured disk. Check <code>LESSON_VIDEO_DISK</code> and the bucket credentials on the panel's Storage page, and use the connection test. Signed mode falls back to proxying when the disk cannot sign URLs.</td>
+              </tr>
+              <tr>
+                <th scope="row">Verification and reset emails never arrive</th>
+                <td>Either <code>MAIL_MAILER</code> is still <code>log</code>, or no queue worker is running. Check <code>storage/logs/laravel.log</code> for the queued mail, then start <code>php artisan queue:work</code>.</td>
+              </tr>
+              <tr>
+                <th scope="row">A settings change in .env has no effect</th>
+                <td>Configuration is cached. Run <code>php artisan optimize:clear</code>.</td>
+              </tr>
+              <tr>
+                <th scope="row">The checkouts succeed but no course appears for the student</th>
+                <td>Nothing was enrolled because the payment was never finalized. Confirm the webhook endpoints are registered and reachable, then check the Payments list in the panel for the pending attempt.</td>
+              </tr>
+              <tr>
+                <th scope="row">The storefront build fails on a page like <code>/instructors</code></th>
+                <td>That page is pre-rendered from live API data and the backend was unreachable. Start the API, then build again.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </article>
+
+    <nav class="pager" aria-label="Chapter navigation">
+      <a class="prev" href="index.html">
+        <span class="pager-dir">Previous chapter</span>
+        Overview
+      </a>
+      <a class="next" href="students.html">
+        <span class="pager-dir">Next chapter</span>
+        Student experience
+      </a>
+    </nav>
+  </main>
+</div>
+
+<footer class="site-foot">
+  <div class="foot-inner">
+    <span>LMS platform documentation &middot; v1.0 &middot; October 2026</span>
+    <a href="index.html">Overview</a>
+    <a href="students.html">Students</a>
+    <a href="instructors.html">Instructors</a>
+    <a href="admin.html">Admin</a>
+    <a href="api.html">API</a>
+    <a href="docker.html">Docker</a>
+    <a href="deployment.html">Deploy</a>
+  </div>
+</footer>
+
+<script src="assets/js/main.js" defer></script>
+</body>
+</html>

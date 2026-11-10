@@ -1,0 +1,25 @@
+# secrets
+.env
+localhost/.env
+frontend/.env
+frontend/.env.local
+
+# dependencies / build
+localhost/vendor
+frontend/node_modules
+frontend/.next
+
+# storage
+localhost/storage/app/*
+!localhost/storage/app/.gitignore
+localhost/storage/logs/*
+localhost/storage/framework/cache/data/*
+localhost/storage/framework/sessions/*
+localhost/storage/framework/views/*
+localhost/public/storage
+
+# dev junk
+.freebuff
+.tmp-db-migrate*
+frontend;C
+*.log

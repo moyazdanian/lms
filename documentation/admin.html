@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admin panel — LMS Documentation</title>
+<meta name="description" content="Every group, resource, and settings page in the Filament admin panel, and what each one controls." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Source+Serif+4:opsz,wght@8..60,400..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+
+<header class="topbar">
+  <button class="rail-toggle" id="railToggle" type="button" aria-expanded="false" aria-controls="rail">Contents</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">LMS</span>
+    <span class="brand-text">Documentation</span>
+  </a>
+  <p class="topbar-meta">v1.0 &middot; October 2026</p>
+  <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+</header>
+
+<div class="shell">
+  <nav class="rail" id="rail" aria-label="Documentation contents">
+    <div class="rail-search">
+      <label class="sr-only" for="railFilter">Filter contents</label>
+      <input id="railFilter" type="search" placeholder="Filter sections" autocomplete="off" />
+      <p class="rail-empty" hidden>No section matches that.</p>
+    </div>
+    <ol class="chapters">
+      <li><a href="index.html"><span class="num">01</span> Overview</a></li>
+      <li><a href="installation.html"><span class="num">02</span> Installation</a></li>
+      <li><a href="students.html"><span class="num">03</span> Student experience</a></li>
+      <li><a href="instructors.html"><span class="num">04</span> Instructor workspace</a></li>
+      <li><a href="admin.html" class="is-current" aria-current="page"><span class="num">05</span> Admin panel</a></li>
+      <li><a href="api.html"><span class="num">06</span> API reference</a></li>
+      <li><a href="docker.html"><span class="num">07</span> Docker deployment</a></li>
+      <li><a href="deployment.html"><span class="num">08</span> Deploy to a server</a></li>
+    </ol>
+    <div class="rail-section" id="onThisPage" hidden>
+      <h2 class="rail-heading">On this page</h2>
+      <ul class="toc" id="toc"></ul>
+    </div>
+  </nav>
+
+  <main class="content" id="content">
+    <article class="chapter">
+      <header class="chapter-open">
+        <span class="chapter-num" aria-hidden="true">05</span>
+        <h1>Admin panel</h1>
+        <p class="chapter-lede">The control room. Nineteen resources and six settings pages, ordered here exactly as the panel's sidebar orders them, so you can find anything by looking at your own screen.</p>
+        <p class="chapter-meta">Nine sections, one per sidebar group. Every page in the panel is behind the administrator role and every action is written to an audit log.</p>
+      </header>
+
+      <section class="sec" id="panel">
+        <h2>The panel at a glance</h2>
+        <p>The panel is served by the same Laravel application as the API, at <code>/admin</code>. It is a Filament application, so tables are searchable and sortable, filters and bulk actions are everywhere, and forms validate before they save.</p>
+
+        <h3>The dashboard</h3>
+        <p>The first screen after signing in answers "is anything waiting for me?" before it shows anything else:</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Widget</th>
+                <th scope="col">Shows</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Paid revenue</th>
+                <td>Total gross value of payments that settled.</td>
+              </tr>
+              <tr>
+                <th scope="row">Paid orders</th>
+                <td>How many orders completed.</td>
+              </tr>
+              <tr>
+                <th scope="row">Active instructors</th>
+                <td>Instructors who are not banned.</td>
+              </tr>
+              <tr>
+                <th scope="row">Pending payout requests</th>
+                <td>A count that links straight to the queue, highlighted as needing attention.</td>
+              </tr>
+              <tr>
+                <th scope="row">Instructor applications</th>
+                <td>Applications waiting for a decision, also linked and highlighted.</td>
+              </tr>
+              <tr>
+                <th scope="row">Sales trend</th>
+                <td>Revenue over time across the whole marketplace.</td>
+              </tr>
+              <tr>
+                <th scope="row">Top instructors</th>
+                <td>Who is earning the most, useful when deciding who to feature.</td>
+              </tr>
+              <tr>
+                <th scope="row">Latest course sales</th>
+                <td>The most recent purchases with student and course.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Branding and access</h3>
+        <ul>
+          <li>The sidebar brand and the browser favicon come from <strong>General Settings</strong>, so the panel carries your identity, not the product's.</li>
+          <li>The sidebar is grouped exactly as this chapter is: Courses, Payments, Orders, Content, Certificates, Users, Coupons, Communication, Settings.</li>
+          <li>Only accounts with the administrator role can open the panel.</li>
+        </ul>
+
+        <h3>Audit trail</h3>
+        <p>Every panel visit and every state-changing request — create, update, delete — is written to a dedicated <code>admin_audit</code> log channel with the administrator's identity, IP address, URL, and submitted input. Password, token, secret, and key fields are redacted before they are written, so the log can be read safely.</p>
+      </section>
+
+      <section class="sec" id="courses">
+        <h2>Courses</h2>
+        <p>The largest group in the panel. Five screens cover catalog structure, the two approval queues, and who is enrolled in what.</p>
+
+        <h3>Categories</h3>
+        <p>The catalog's taxonomy. A course belongs to one category, category pages are public at <code>/categories/{slug}</code>, and the catalog filter builds its options from this list. Categories are ordered by their own sort field, which is the order visitors see.</p>
+
+        <h3>Courses</h3>
+        <p>Every course in the system, with its instructor, category, price, status, and approval state. An administrator can create or edit a course directly, flip the <strong>featured</strong> flag that puts it on the homepage, deactivate one that should disappear from the catalog without being deleted, and correct a price or description when support asks.</p>
+
+        <h3>Course Approvals</h3>
+        <p>The queue of submitted courses. Open one to read it as a student would — description, objectives, curriculum, preview video — then approve it, which publishes it and notifies the instructor, or reject it with a reason, which returns it to the instructor for changes. Approval and rejection are available both from the row and from the course's own page.</p>
+
+        <h3>Course Edit Requests</h3>
+        <p>Changes instructors propose for courses that are already live. Each request lists the affected fields with the current and the proposed value, and the pending preview video can be played next to the live one before deciding. Approving applies the whole batch; rejecting leaves the live course exactly as it was and records the reason for the instructor.</p>
+
+        <h3>Enrollments</h3>
+        <p>The student-to-course links that decide who may watch what. Each row shows the student, the course, and the enrollment status, which is the same record the video and attachment endpoints check. When a payment is refunded or a mistake in support needs correcting, this is where access is corrected.</p>
+
+        <h3>Media previews</h3>
+        <p>Lesson videos and course previews are private, but the panel can play them: an administrator previews a lesson video, a course trailer, or both versions of a trailer in an edit request without ever exposing a public file URL.</p>
+      </section>
+
+      <section class="sec" id="users">
+        <h2>Users</h2>
+        <p>Three lists, split by what the administrator needs: all accounts, the teaching side, and the people who want to join it.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Screen</th>
+                <th scope="col">What it is for</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">All Users</th>
+                <td>Search and edit any account: details, role, and status. Promotion or demotion happens here when it is not the result of an instructor application.</td>
+              </tr>
+              <tr>
+                <th scope="row">All Instructors</th>
+                <td>Instructors with their teaching profile beside the account — biography, expertise, links, rating, and status. The profile actions allow banning an instructor, restoring one, or rejecting the profile outright, which locks the instructor workspace without touching the account or its courses.</td>
+              </tr>
+              <tr>
+                <th scope="row">Instructor Applications</th>
+                <td>Pending applications with the applicant's biography, expertise, and links. Approving creates the instructor profile and role; rejecting records a note the applicant can read.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="sec" id="commerce">
+        <h2>Orders and payments</h2>
+        <p>Three screens: what was bought, whether it was paid, and what the site owes its instructors.</p>
+
+        <h3>Orders</h3>
+        <p>One row per checkout, with its items, total, discount, coupon, and payment status, and a link to the student. Orders are the financial record behind enrollments; an order that was never paid explains why a student has no access.</p>
+
+        <h3>Payments</h3>
+        <p>The gateway-side view of the same money. Each attempt shows the gateway used, the amount, the currency, and the gateway's own reference. Two actions matter in daily support:</p>
+        <ul>
+          <li><strong>Resync</strong> — ask the gateway what really happened. When a webhook was missed or a customer closed the tab, a resync settles the payment record and finalizes the order and the enrollment. It can also be run on several rows at once.</li>
+          <li><strong>Mark cancelled</strong> — close an attempt that will never complete, so it stops looking like a live transaction.</li>
+        </ul>
+
+        <h3>Payout Requests</h3>
+        <p>The instructor withdrawal queue. Each request shows the amount, the method and account details to pay into, and its status. Approving reserves the earnings behind it, <strong>mark paid</strong> completes the ledger, and rejecting records a reason and releases the money back to the instructor's available balance.</p>
+      </section>
+
+      <section class="sec" id="coupons">
+        <h2>Coupons</h2>
+        <p>Discount codes and the evidence of who used them.</p>
+        <ul>
+          <li><strong>Coupons</strong> — create a code with a percentage or fixed amount, an optional total usage limit, a minimum order value, an active window, and an optional first-order-only restriction. Codes can be deactivated without being deleted, which keeps their history intact.</li>
+          <li><strong>Coupon usages</strong> — one row per redemption, linked to the coupon, the customer, and the payment it was applied to. This is the list to consult when someone claims a code did not work or has already been used.</li>
+        </ul>
+      </section>
+
+      <section class="sec" id="certificates-group">
+        <h2>Certificates and quizzes</h2>
+        <p>Certificates students have earned, and the quizzes that unlock them.</p>
+        <ul>
+          <li><strong>Certificates</strong> — every issued certificate with its serial, its public verification code, the student, the course, and its issue date. Open one to download the PDF, <strong>revoke</strong> it with a reason (the public verification page then reports it as revoked), or <strong>restore</strong> a revocation made in error.</li>
+          <li><strong>Quizzes</strong> — the quizzes attached to courses, with the pass mark, the attempt limit, and the questions, options, points, and explanations behind them. The administrator can edit quiz settings and content when an instructor's quiz needs a correction.</li>
+        </ul>
+      </section>
+
+      <section class="sec" id="content-group">
+        <h2>Content</h2>
+        <p>Everything a visitor reads on the public site — including the text you are legally answerable for — is written here rather than in code.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Screen</th>
+                <th scope="col">What it controls</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Homepage Content</th>
+                <td>Every section of the landing page: headings, body copy, calls to action, images, and the order they appear in. Changes are live on the storefront immediately.</td>
+              </tr>
+              <tr>
+                <th scope="row">Footer</th>
+                <td>The footer columns, their links, and the social icons, plus the short description and copyright line shown in every page footer.</td>
+              </tr>
+              <tr>
+                <th scope="row">Terms &amp; Privacy</th>
+                <td>Two independent documents on one screen, each with its own page title and rich-text body. The terms render at <code>/terms</code> and the privacy policy at <code>/privacy-policy</code>, and both remain editable without a deploy.</td>
+              </tr>
+              <tr>
+                <th scope="row">Cookie Consent</th>
+                <td>The consent banner: banner title, body copy, and the labels of its three buttons — accept all, keep only necessary, and the link to the cookie policy. The cookie policy page itself renders the same body text, so the copy lives in one place.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="sec" id="communication">
+        <h2>Communication</h2>
+        <p>Reaching students, and answering them.</p>
+
+        <h3>Send Notifications</h3>
+        <p>Compose a notification for one user or a group, give it a title, a body, and a type — info, success, warning, or danger — and send it. Notifications land in the recipient's in-app list and their dashboard, and each one tracks whether it has been read.</p>
+
+        <h3>Support Tickets</h3>
+        <p>The student support queue. Each ticket shows its subject, the student, and its status, and opens into the full conversation. Staff reply inside the thread, close a ticket when it is resolved, and reopen it if the problem returns. Replies reach the student in their own dashboard thread at once.</p>
+      </section>
+
+      <section class="sec" id="settings">
+        <h2>Settings</h2>
+        <p>Six pages that decide how the whole installation behaves. Everything here can be changed at any time without touching a file.</p>
+
+        <h3>General Settings</h3>
+        <p>The site's identity: site name, logo, and favicon. The site name is used in page titles across the storefront, in the panel brand, in the footer, and on issued certificates. Uploading a new logo or favicon removes the previous file instead of leaving it behind.</p>
+
+        <h3>Payment Gateways</h3>
+        <p>Stripe, PayPal, Mollie, and Razorpay, each with its own switch and its own credential fields — Stripe's secret key, PayPal's mode and client pair, Mollie's API key, Razorpay's key pair. Only enabled gateways are offered at checkout, so a gateway can be prepared and switched on later. Webhook URLs for Stripe and Mollie are shown next to the fields that need them.</p>
+
+        <h3>Payout Methods</h3>
+        <p>Two things in one screen: the commercial rules — the instructor commission percentage and the minimum payout amount — and the list of payout methods instructors may choose from. Each method has a value, a label, and a label for the account field it asks for, so adding a new payout route is a matter of adding a row.</p>
+
+        <h3>Social Login</h3>
+        <p>Google sign-in. Enable it and paste the client ID and secret, and the screen shows the exact redirect URI to register in the Google console for this installation, built from the site's own URL. When these fields are empty, the values in the backend environment file are used instead.</p>
+
+        <h3>Storage</h3>
+        <p>Where lesson media lives and how it is delivered: the disk (a local private directory, a public one, or an S3-compatible bucket), the streaming mode, and the bucket's key, secret, region, bucket name, URL, endpoint, and path-style setting for providers that need it. A connection test verifies the credentials before a large course is uploaded, and a checklist appears during long uploads so the browser is not abandoned mid-transfer. Values saved here take priority over the environment file.</p>
+
+        <h3>Storage Report</h3>
+        <p>A read-only account of stored media: how much is on each disk, how it is distributed across courses and lessons, and whether anything is in an unexpected place. Refresh it after moving a library to a bucket to confirm the migration did what you expected.</p>
+      </section>
+    </article>
+
+    <nav class="pager" aria-label="Chapter navigation">
+      <a class="prev" href="instructors.html">
+        <span class="pager-dir">Previous chapter</span>
+        Instructor workspace
+      </a>
+      <a class="next" href="api.html">
+        <span class="pager-dir">Next chapter</span>
+        API reference
+      </a>
+    </nav>
+  </main>
+</div>
+
+<footer class="site-foot">
+  <div class="foot-inner">
+    <span>LMS platform documentation &middot; v1.0 &middot; October 2026</span>
+    <a href="index.html">Overview</a>
+    <a href="installation.html">Installation</a>
+    <a href="students.html">Students</a>
+    <a href="instructors.html">Instructors</a>
+    <a href="api.html">API</a>
+    <a href="docker.html">Docker</a>
+    <a href="deployment.html">Deploy</a>
+  </div>
+</footer>
+
+<script src="assets/js/main.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+# Caddy sits in front of the whole stack: it answers on 80/443, obtains a
+# Let's Encrypt certificate for each hostname on its own, renews it about 30
+# days before it expires, and redirects plain HTTP to HTTPS. Nothing has to be
+# scheduled on the server and no certificate is ever copied by hand.
+#
+# The hostnames come from .env (WEB_DOMAIN, API_DOMAIN). To also receive
+# certificate-expiry mail, add `email you@example.com` as the first line inside
+# the block below and restart the container: docker compose restart caddy.
+
+{
+	admin off
+}
+
+# The storefront. Its JavaScript calls the API on this same origin, so Sanctum's
+# session and XSRF-TOKEN cookies stay first-party and the login form works
+# without extra cookie-domain settings.
+{$WEB_DOMAIN} {
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000"
+
+	# The API and Laravel's cookie-auth endpoints.
+	@apiPath path /api/* /sanctum/*
+	@apiPost {
+		method POST
+		path /login /register /logout /forgot-password /reset-password /email/verification-notification
+	}
+	# /auth/google/redirect and /auth/google/callback belong to Laravel; the
+	# storefront's own /auth/callback page (two segments) does not.
+	@apiOauth path_regexp ^/auth/[^/]+/(redirect|callback)$
+
+	handle @apiPath {
+		reverse_proxy api:80
+	}
+
+	handle @apiPost {
+		reverse_proxy api:80
+	}
+
+	handle @apiOauth {
+		reverse_proxy api:80
+	}
+
+	# Everything else is the Next.js storefront, including the /login and
+	# /register pages those posts come from.
+	handle {
+		reverse_proxy web:3000
+	}
+}
+
+# The API origin: the Filament admin panel at /admin, uploads at /storage and
+# the callbacks of the Google sign-in flow. Everything here is Laravel.
+{$API_DOMAIN} {
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000"
+
+	reverse_proxy api:80
+}

@@ -1,0 +1,158 @@
+# Docker stack: MySQL, the Laravel API (+ Filament admin), the Next.js
+# storefront, and Caddy, which terminates TLS and renews the certificates.
+#
+#   cp .env.docker.example .env      # set WEB_DOMAIN and API_DOMAIN
+#   docker compose up -d             # the first run builds both images
+#
+# Caddy answers on 80/443 for both hostnames, so the server needs no other web
+# server. Point the two DNS records at the server *before* the first start and
+# the certificates are issued as soon as the stack is up.
+name: lms
+
+services:
+  mysql:
+    # Pinned on purpose instead of the floating `8.4` tag: the 8.4.13 image
+    # published on 3 Nov 2026 ships a zero-byte /usr/local/bin/docker-entrypoint.sh,
+    # so it dies with "exec format error" and the healthcheck never passes.
+    # To bump it, first check the new tag really has a working entrypoint:
+    #   docker run --rm --entrypoint sh mysql:8.4.x -c 'ls -l /usr/local/bin/docker-entrypoint.sh'
+    image: mysql:8.4.11
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: "${DB_DATABASE:-lms}"
+      MYSQL_USER: "${DB_USERNAME:-lms}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:-lms-secret}"
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-root-secret}"
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - lms-mysql:/var/lib/mysql
+    healthcheck:
+      # The API waits for this before migrating, so a slow first start-up
+      # (InnoDB initialisation) does not abort the boot.
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  api:
+    build:
+      context: ./localhost
+    restart: unless-stopped
+    ports:
+      # Loopback only: the public entry point is Caddy, and these two ports are
+      # kept for debugging on the server itself (`curl 127.0.0.1:8080/up`).
+      - "127.0.0.1:${API_PORT:-8080}:80"
+    environment:
+      APP_NAME: "${APP_NAME:-LMS}"
+      APP_ENV: production
+      APP_DEBUG: "false"
+      # The API origin: admin panel, uploads and OAuth callbacks. Used to build
+      # media and signed URLs, so it must be the address visitors reach.
+      APP_URL: "https://${API_DOMAIN:-api.localhost}"
+      FRONTEND_URL: "https://${WEB_DOMAIN:-localhost}"
+      APP_KEY: "${APP_KEY:-}"
+
+      # Required, and only used when the database is created for the first
+      # time. There is deliberately no default account: compose refuses to
+      # start until both are set in .env, so a fresh copy can never come up
+      # with a password nobody knows or with a shipped one everybody shares.
+      ADMIN_EMAIL: "${ADMIN_EMAIL:?ADMIN_EMAIL is required: copy .env.docker.example to .env and set it}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:?ADMIN_PASSWORD is required: copy .env.docker.example to .env and set it}"
+
+      # MySQL runs in the compose network; the data lives on its own volume.
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_DATABASE: "${DB_DATABASE:-lms}"
+      DB_USERNAME: "${DB_USERNAME:-lms}"
+      DB_PASSWORD: "${DB_PASSWORD:-lms-secret}"
+
+      SESSION_DRIVER: database
+      QUEUE_CONNECTION: database
+      CACHE_STORE: database
+
+      # Caddy terminates TLS and passes X-Forwarded-* headers, so Laravel has to
+      # trust it: without this the login throttle would count every visitor as
+      # one client and generated URLs would use http:// instead of https://.
+      TRUSTED_PROXIES: "*"
+
+      SANCTUM_STATEFUL_DOMAINS: "${WEB_DOMAIN:-localhost}"
+      CORS_ALLOWED_ORIGINS: "https://${WEB_DOMAIN:-localhost}"
+
+      FILESYSTEM_DISK: local
+      LESSON_VIDEO_DISK: private
+      VIDEO_SERVING_MODE: proxy
+
+      # Mail is read from these variables only; the mailer itself is chosen in
+      # .env. Left at "log", messages go to the container log instead of a
+      # real server, which is fine for a first boot and never for production.
+      MAIL_MAILER: "${MAIL_MAILER:-log}"
+      MAIL_HOST: "${MAIL_HOST:-}"
+      MAIL_PORT: "${MAIL_PORT:-587}"
+      MAIL_SCHEME: "${MAIL_SCHEME:-}"
+      MAIL_USERNAME: "${MAIL_USERNAME:-}"
+      MAIL_PASSWORD: "${MAIL_PASSWORD:-}"
+      MAIL_FROM_ADDRESS: "${MAIL_FROM_ADDRESS:-}"
+      MAIL_FROM_NAME: "${MAIL_FROM_NAME:-}"
+      LOG_CHANNEL: stderr
+    volumes:
+      - lms-storage:/var/www/html/storage
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        # The browser calls the API through the storefront origin (/api), so
+        # this is WEB_DOMAIN: Sanctum's cookies then stay first-party. These
+        # values are baked into the bundle, so a domain change needs a rebuild.
+        NEXT_PUBLIC_API_PROD_URL: "https://${WEB_DOMAIN:-localhost}"
+        NEXT_PUBLIC_API_URL: "https://${API_DOMAIN:-api.localhost}"
+        NEXT_PUBLIC_MEDIA_HOSTS: "${NEXT_PUBLIC_MEDIA_HOSTS:-}"
+        NEXT_IMAGE_UNOPTIMIZED: "1"
+    restart: unless-stopped
+    ports:
+      # Loopback only, like the API: Caddy is what the internet talks to.
+      - "127.0.0.1:${WEB_PORT:-3000}:3000"
+    environment:
+      # Server-side (SSR) address of the API — resolves on the compose network.
+      API_INTERNAL_URL: http://api
+      NEXT_IMAGE_UNOPTIMIZED: "1"
+    depends_on:
+      - api
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      WEB_DOMAIN: "${WEB_DOMAIN:-localhost}"
+      API_DOMAIN: "${API_DOMAIN:-api.localhost}"
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificates and the ACME account live here: recreating the container
+      # (an update, a reboot) reuses them instead of requesting new ones, which
+      # keeps the install well inside Let's Encrypt's rate limits.
+      - lms-caddy-data:/data
+      - lms-caddy-config:/config
+    depends_on:
+      - api
+      - web
+
+volumes:
+  lms-storage:
+  lms-mysql:
+  lms-caddy-data:
+  lms-caddy-config:

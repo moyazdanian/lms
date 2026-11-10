@@ -1,0 +1,14 @@
+.git
+.gitignore
+.env
+.env.*
+vendor
+node_modules
+storage/logs/*
+!storage/logs/.gitignore
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/private/*
+public/storage
+database/*.sqlite

@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Deploy to a server — LMS Documentation</title>
+<meta name="description" content="Take the LMS from a local Docker stack to a public server: two DNS records, a Linux host, automatic HTTPS certificates and renewal, the environment values that must change, and the checks that prove it works." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Source+Serif+4:opsz,wght@8..60,400..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+
+<header class="topbar">
+  <button class="rail-toggle" id="railToggle" type="button" aria-expanded="false" aria-controls="rail">Contents</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">LMS</span>
+    <span class="brand-text">Documentation</span>
+  </a>
+  <p class="topbar-meta">v1.0 &middot; October 2026</p>
+  <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+</header>
+
+<div class="shell">
+  <nav class="rail" id="rail" aria-label="Documentation contents">
+    <div class="rail-search">
+      <label class="sr-only" for="railFilter">Filter contents</label>
+      <input id="railFilter" type="search" placeholder="Filter sections" autocomplete="off" />
+      <p class="rail-empty" hidden>No section matches that.</p>
+    </div>
+    <ol class="chapters">
+      <li><a href="index.html"><span class="num">01</span> Overview</a></li>
+      <li><a href="installation.html"><span class="num">02</span> Installation</a></li>
+      <li><a href="students.html"><span class="num">03</span> Student experience</a></li>
+      <li><a href="instructors.html"><span class="num">04</span> Instructor workspace</a></li>
+      <li><a href="admin.html"><span class="num">05</span> Admin panel</a></li>
+      <li><a href="api.html"><span class="num">06</span> API reference</a></li>
+      <li><a href="docker.html"><span class="num">07</span> Docker deployment</a></li>
+      <li><a href="deployment.html" class="is-current" aria-current="page"><span class="num">08</span> Deploy to a server</a></li>
+    </ol>
+    <div class="rail-section" id="onThisPage" hidden>
+      <h2 class="rail-heading">On this page</h2>
+      <ul class="toc" id="toc"></ul>
+    </div>
+  </nav>
+
+  <main class="content" id="content">
+    <article class="chapter">
+      <header class="chapter-open">
+        <span class="chapter-num" aria-hidden="true">08</span>
+        <h1>Deploy to a server</h1>
+        <p class="chapter-lede">Everything needed to move the platform from a laptop to a real host with a domain and HTTPS: two DNS records, Docker on the server, the two domain values that must change, the Caddy proxy that ships with the stack — certificates and renewal included — and the checks that prove the site really works.</p>
+        <p class="chapter-meta">This chapter assumes the Docker stack from <a href="docker.html">Docker deployment</a>. A manual PHP install works the same way — only the reverse-proxy targets change.</p>
+      </header>
+
+      <section class="sec" id="before">
+        <h2>What you need before starting</h2>
+        <div class="table-wrap">
+          <table>
+            <caption>Minimum for a real course site</caption>
+            <thead>
+              <tr>
+                <th scope="col">Item</th>
+                <th scope="col">Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Server</th>
+                <td>Ubuntu 22.04 or 24.04 LTS (any Linux with Docker works). 2 vCPU and 2&nbsp;GB RAM minimum; 4&nbsp;GB makes the first build comfortable.</td>
+              </tr>
+              <tr>
+                <th scope="row">Disk</th>
+                <td>40&nbsp;GB minimum. Lesson videos are the real cost — if they will be large, plan an S3-compatible bucket instead (Admin → Settings → Storage).</td>
+              </tr>
+              <tr>
+                <th scope="row">Domain</th>
+                <td>One domain you control, with the ability to add A records. Two hostnames are used: the storefront and the API.</td>
+              </tr>
+              <tr>
+                <th scope="row">Ports</th>
+                <td>80 and 443 open on the server, answered by the Caddy container. The app containers stay on loopback ports behind it.</td>
+              </tr>
+              <tr>
+                <th scope="row">Access</th>
+                <td>SSH with a sudo-capable user. No panel, no PHP, no MySQL on the host — Docker provides all of it.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note">
+          <span class="note-title">Why two hostnames</span>
+          <p>The storefront is a Node server and the API (with the admin panel) is nginx + PHP. They also use overlapping paths — the admin panel loads its CSS and JavaScript from <code>/css</code> and <code>/js</code>, which would collide with the storefront if both lived on one hostname. Two hostnames, one certificate each, no path juggling:</p>
+          <ul>
+            <li><code>example.com</code> &rarr; the storefront</li>
+            <li><code>api.example.com</code> &rarr; the API, <code>/admin</code>, <code>/storage</code>, webhooks</li>
+          </ul>
+          <p>The browser talks to the storefront, which forwards <code>/api</code> and <code>/sanctum</code> to Laravel on that same origin — that is what keeps Sanctum's session and CSRF cookies first-party. Uploaded files, the admin panel and webhooks go straight to the API host. The storefront's own server-side rendering uses the private Docker network, so no request loops back through the proxy.</p>
+        </div>
+      </section>
+
+      <section class="sec" id="dns">
+        <h2>Point the domain at the server</h2>
+        <p>At your DNS provider, create these records with the server's public IPv4 address (and AAAA records if you have IPv6):</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Type</th>
+                <th scope="col">Name</th>
+                <th scope="col">Value</th>
+                <th scope="col">Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>A</td><td><code>@</code></td><td>203.0.113.10</td><td>The storefront at <code>https://example.com</code>. Use <code>www</code> instead if that is the address visitors should type — pick one.</td></tr>
+              <tr><td>A</td><td><code>api</code></td><td>203.0.113.10</td><td>The API and admin panel at <code>https://api.example.com</code>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>Verify before touching the server — certificate issuance fails while DNS is still propagating:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>dig +short example.com
+dig +short api.example.com</code></pre>
+        </div>
+        <p>Both commands must print the server's IP. Propagation is usually minutes, occasionally a few hours.</p>
+      </section>
+
+      <section class="sec" id="server">
+        <h2>Prepare the server</h2>
+
+        <ol class="steps">
+          <li>
+            <h3>Install Docker Engine and Compose</h3>
+            <div class="codeblock" data-label="Terminal">
+              <pre><code>sudo apt update &amp;&amp; sudo apt upgrade -y
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker "$USER"</code></pre>
+            </div>
+            <p>Log out and back in so the group applies, then check:</p>
+            <div class="codeblock" data-label="Terminal">
+              <pre><code>docker version
+docker compose version</code></pre>
+            </div>
+          </li>
+
+          <li>
+            <h3>Open only the ports you need</h3>
+            <div class="codeblock" data-label="Terminal">
+              <pre><code>sudo ufw allow OpenSSH
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable</code></pre>
+            </div>
+            <div class="warn">
+              <span class="note-title">Nothing else may own port 80 or 443</span>
+              <p>Caddy inside the stack publishes those two ports, and Docker writes its own firewall rules for them, so <code>ufw deny 8080</code> does <em>not</em> hide a published port. The API and storefront ports are already bound to <code>127.0.0.1</code> and are never public. If Apache, nginx or a hosting panel already listens on 80/443, stop it first — <code>sudo ss -ltnp | grep -E ':80|:443'</code> shows which process owns them.</p>
+            </div>
+          </li>
+
+          <li>
+            <h3>Put the project on the server</h3>
+            <div class="codeblock" data-label="Terminal">
+              <pre><code>sudo mkdir -p /opt/lms
+sudo chown "$USER":"$USER" /opt/lms
+# upload the download (scp, rsync or the host's file manager) into /opt/lms
+cd /opt/lms
+ls docker-compose.yml .env.docker.example</code></pre>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="sec" id="config">
+        <h2>Configure the stack</h2>
+        <p>Create the environment file from the shipped example and open it:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>cd /opt/lms
+cp .env.docker.example .env
+nano .env</code></pre>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <caption>Values that must change for a public site</caption>
+            <thead>
+              <tr>
+                <th scope="col">Key</th>
+                <th scope="col">Set it to</th>
+                <th scope="col">Why</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>WEB_DOMAIN</code></td>
+                <td><code>example.com</code></td>
+                <td>The storefront host — the address visitors type, and the one Caddy gets a certificate for. Baked into the frontend image at build time.</td>
+              </tr>
+              <tr>
+                <td><code>API_DOMAIN</code></td>
+                <td><code>api.example.com</code></td>
+                <td>The API and admin-panel host: <code>/admin</code>, uploads, Google callbacks and payment webhooks. Its certificate is issued separately.</td>
+              </tr>
+              <tr>
+                <td><code>ADMIN_EMAIL</code>, <code>ADMIN_PASSWORD</code></td>
+                <td>your own credentials</td>
+                <td>The first administrator, created once when the database is seeded. Both are required: nothing is generated and no account is shipped, so compose refuses to start while either is empty.</td>
+              </tr>
+              <tr>
+                <td><code>DB_DATABASE</code>, <code>DB_USERNAME</code>, <code>DB_PASSWORD</code>, <code>DB_ROOT_PASSWORD</code></td>
+                <td>long random values</td>
+                <td>Used when MySQL initialises its volume. Change them before the first start; changing them later needs matching changes inside the server.</td>
+              </tr>
+              <tr>
+                <td><code>MAIL_MAILER</code> + <code>MAIL_HOST</code>, <code>MAIL_PORT</code>, <code>MAIL_USERNAME</code>, <code>MAIL_PASSWORD</code>, <code>MAIL_FROM_ADDRESS</code></td>
+                <td><code>smtp</code> and your provider's values</td>
+                <td>Verification and password-reset mail. With <code>log</code> the mail is only written to the container log.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="codeblock" data-label=".env">
+          <pre><code>WEB_DOMAIN=example.com
+API_DOMAIN=api.example.com
+
+ADMIN_EMAIL=owner@example.com
+# Required. There is no default account and no generated password.
+ADMIN_PASSWORD=a-long-unique-password
+
+DB_DATABASE=lms
+DB_USERNAME=lms
+DB_PASSWORD=a-long-random-database-password
+DB_ROOT_PASSWORD=another-long-random-password
+
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.yourprovider.com
+MAIL_PORT=587
+MAIL_SCHEME=smtp
+MAIL_USERNAME=postmaster@example.com
+MAIL_PASSWORD=your-smtp-password
+MAIL_FROM_ADDRESS=no-reply@example.com</code></pre>
+        </div>
+
+        <div class="warn">
+          <span class="note-title">Bare hostnames</span>
+          <p><code>WEB_DOMAIN</code> and <code>API_DOMAIN</code> are hostnames only: <code>example.com</code>, not <code>https://example.com</code>, not <code>example.com/</code> and not <code>example.com:443</code>. Caddy builds the <code>https://</code> origins from them, and a stray scheme or slash becomes a certificate request for a name that does not exist.</p>
+        </div>
+
+        <div class="note">
+          <span class="note-title">Values the stack fills in</span>
+          <p><code>APP_URL</code>, <code>FRONTEND_URL</code>, <code>SANCTUM_STATEFUL_DOMAINS</code>, <code>CORS_ALLOWED_ORIGINS</code> and both <code>NEXT_PUBLIC_*</code> build arguments are computed from the two domains inside <code>docker-compose.yml</code>. Leave <code>API_PORT</code> and <code>WEB_PORT</code> at <code>8080</code> and <code>3000</code>: they are loopback debugging ports, not public ones. Do not set <code>APP_KEY</code> — it is generated on the first boot and kept on the storage volume, which is what keeps existing sessions and encrypted values readable after an update.</p>
+        </div>
+      </section>
+
+      <section class="sec" id="start">
+        <h2>Build and start</h2>
+        <p>The API and storefront ports are already bound to <code>127.0.0.1</code>, so Caddy on ports 80 and 443 is the only public entry point. Build and start everything:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose up -d</code></pre>
+        </div>
+        <p>The first build takes 10–20 minutes on a small server (npm install plus the Next.js production build). Watch the first boot with:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose ps
+docker compose logs -f api caddy</code></pre>
+        </div>
+        <p>You should see the database wait, then <code>Running migrations...</code>, then <code>First boot: seeding the database...</code>, then PHP-FPM and nginx start. All four containers must report <code>running</code> (or <code>healthy</code> for MySQL), and the Caddy log ends with <code>certificate obtained successfully</code> for each hostname. Nothing on the host listens on 80 or 443 before this point, which is why an existing web server has to be stopped first.</p>
+
+        <div class="note">
+          <span class="note-title">If the frontend build is killed with "signal 9"</span>
+          <p>The Next.js build needs roughly 2&nbsp;GB of RAM on its own. On a 2&nbsp;GB server add swap before building:</p>
+          <div class="codeblock" data-label="Terminal">
+            <pre><code>sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="sec" id="proxy">
+        <h2>Certificates and HTTPS</h2>
+        <p>The stack serves HTTPS by itself: a Caddy container owns ports 80 and 443, answers for both hostnames, redirects plain HTTP to HTTPS, and obtains a Let's Encrypt certificate for each name. There is no certificate to buy or copy, and no cron job to install.</p>
+
+        <div class="table-wrap">
+          <table>
+            <caption>What runs on its own</caption>
+            <thead>
+              <tr>
+                <th scope="col">Task</th>
+                <th scope="col">Handled by</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>The first certificate for <code>example.com</code> and <code>api.example.com</code></td><td>Caddy, within a minute of the stack starting — provided DNS resolves and ports 80/443 reach the server.</td></tr>
+              <tr><td>Renewal before the 90 days run out</td><td>Caddy, roughly 30 days ahead, retrying on its own if an attempt fails.</td></tr>
+              <tr><td>Surviving updates and reboots</td><td>The <code>lms-caddy-data</code> volume, which keeps the certificates and the ACME account key.</td></tr>
+              <tr><td>HTTP &rarr; HTTPS</td><td>Caddy, for both hostnames.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Checking issuance and renewal</h3>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose logs caddy | grep -i certificate
+docker compose exec caddy ls /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory</code></pre>
+        </div>
+        <p>The first command is where to look when something is wrong: it prints the order, the challenge and, on failure, the reason — DNS not resolving, port unreachable, or a rate limit. The second lists the names that are currently issued.</p>
+
+        <h3>Changing or moving a domain</h3>
+        <p>Put the new names in <code>.env</code> and rebuild, because the storefront origin is compiled into the browser bundle:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose up -d --build</code></pre>
+        </div>
+        <p>Caddy notices the new names, requests their certificates, and leaves the old ones in the volume to expire. Keep the old DNS records pointing here until the new names answer, so no visitor lands on a hostname without a certificate. If a name used to be served by another machine and the order keeps failing, reset only Caddy's volume — the database and uploads live elsewhere:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose down
+docker volume rm lms_lms-caddy-data
+docker compose up -d</code></pre>
+        </div>
+        <p>Let's Encrypt issues at most five certificates per name per week, so do that only when the log actually shows a failed order.</p>
+
+        <h3>Certificate expiry mail</h3>
+        <p>Renewal is automatic, so the mail is a safety net rather than a requirement. To receive it, add your address as the first line inside the global block of <code>docker/caddy/Caddyfile</code>:</p>
+        <div class="codeblock" data-label="docker/caddy/Caddyfile">
+          <pre><code>{
+	email you@example.com
+	admin off
+}</code></pre>
+        </div>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose restart caddy</code></pre>
+        </div>
+
+        <h3>Using your own proxy instead</h3>
+        <p>If the server already runs nginx, Apache or Traefik, stop the bundled proxy — and remove its service from <code>docker-compose.yml</code> so a later start does not bring it back:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose stop caddy</code></pre>
+        </div>
+        <p>Forward the storefront domain to <code>127.0.0.1:3000</code> and the API domain to <code>127.0.0.1:8080</code>. One extra rule is required: on the storefront host, <code>/api</code> and <code>/sanctum</code> must reach the API too, which is what keeps Sanctum's session and CSRF cookies first-party. With nginx:</p>
+        <div class="codeblock" data-label="/etc/nginx/sites-available/lms">
+          <pre><code>server {
+    listen 443 ssl http2;
+    server_name example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /sanctum/ {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name api.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/api.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.example.com/privkey.pem;
+
+    client_max_body_size 1024m;
+    proxy_read_timeout   600s;
+    proxy_send_timeout   600s;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}</code></pre>
+        </div>
+        <p>Create the certificates with <code>sudo certbot --nginx -d example.com -d api.example.com</code> and let it install its renewal timer. The upload limit and the long timeouts matter because lesson videos are streamed through PHP; inside the container nginx already allows 1&nbsp;GB and 600&nbsp;s.</p>
+
+        <div class="note">
+          <span class="note-title">Cookies require HTTPS in production</span>
+          <p>The image runs with <code>APP_ENV=production</code>, which marks the session cookie <code>Secure</code>. Logins therefore only work over <code>https://</code>; testing through <code>http://SERVER_IP:3000</code> will appear to succeed and then drop the session. Always test through the domain.</p>
+        </div>
+      </section>
+
+
+      <section class="sec" id="verify">
+        <h2>Verify the deployment</h2>
+        <p>Work down this list once; each step covers a different failure mode.</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Check</th>
+                <th scope="col">What a pass looks like</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>curl -I https://api.example.com/up</code></td>
+                <td><code>200</code> from Laravel's health route — the API, PHP and the database connection are alive.</td>
+              </tr>
+              <tr>
+                <td><code>curl -s https://api.example.com/api/v1/settingsData</code></td>
+                <td>A JSON object with the site settings. If this 404s on the right host, the proxy is sending traffic to the wrong container.</td>
+              </tr>
+              <tr>
+                <td><code>curl -I https://example.com</code></td>
+                <td><code>200</code> and <code>content-type: text/html</code> — the Next.js server is up and could reach the API during rendering.</td>
+              </tr>
+              <tr>
+                <td>Open <code>https://example.com</code></td>
+                <td>Courses and thumbnails load. Broken images mean <code>API_DOMAIN</code> is wrong, or the frontend image was not rebuilt after changing it.</td>
+              </tr>
+              <tr>
+                <td>Open <code>https://api.example.com/admin</code></td>
+                <td>The Filament login page renders with its stylesheet. Sign in with <code>ADMIN_EMAIL</code> / <code>ADMIN_PASSWORD</code>, then change the password.</td>
+              </tr>
+              <tr>
+                <td>Sign in on the storefront, add a course to the cart</td>
+                <td>No 419, and the session survives a page reload. Both cookies are first-party because the browser calls <code>/api</code> on the storefront origin, which Caddy forwards to Laravel.</td>
+              </tr>
+              <tr>
+                <td>Trigger a password-reset mail</td>
+                <td>The message arrives and its link opens on the API domain. Nothing arriving means <code>MAIL_MAILER</code> is still <code>log</code> or the SMTP values are wrong.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>When changing <code>WEB_DOMAIN</code> or <code>API_DOMAIN</code> later, rebuild the storefront — those values are compiled into the browser bundle:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose up -d --build web</code></pre>
+        </div>
+      </section>
+
+      <section class="sec" id="worker">
+        <h2>The queue worker</h2>
+        <p>Mail and notifications are queued in the database (<code>QUEUE_CONNECTION=database</code>). The API container already runs a worker for them: <code>supervisord</code> starts <code>php artisan queue:work</code> next to nginx and php-fpm, restarts it if it ever exits, and recycles it hourly so a long-lived process cannot leak memory. There is nothing to install or schedule on the server.</p>
+        <p>Confirm it is alive after a deployment, and watch what it processes:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose exec api supervisorctl status 2>/dev/null || docker compose exec api ps -ef | grep queue
+docker compose logs -f api | grep -i queue</code></pre>
+        </div>
+        <p>If the queue backed up while the site was down, drain it once without waiting for the hourly cycle:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose exec api php artisan queue:work --stop-when-empty --tries=3</code></pre>
+        </div>
+        <p>Jobs that keep failing land in <code>failed_jobs</code> after three attempts. Inspect and retry them with <code>php artisan queue:failed</code> and <code>php artisan queue:retry all</code>.</p>
+      </section>
+
+      <section class="sec" id="operations">
+        <h2>Keep it running</h2>
+
+        <h3>Backups</h3>
+        <p>Two things must be backed up: the MySQL database and the storage volume (uploads and lesson videos).</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>mkdir -p /opt/lms/backups
+cd /opt/lms
+
+# database
+docker compose exec -T mysql sh -c 'exec mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" --single-transaction --databases "$MYSQL_DATABASE"' \
+  > "backups/db-$(date +%F).sql"
+
+# uploads, videos and the app key
+docker run --rm -v lms_lms-storage:/data -v /opt/lms/backups:/backup alpine \
+  tar czf "/backup/storage-$(date +%F).tgz" -C /data .</code></pre>
+        </div>
+        <p>Schedule both with <code>crontab -e</code> (for example nightly at 03:15) and copy the files off the server — a backup on the same disk is not a backup.</p>
+
+        <h3>Updates</h3>
+        <p>Replace the project files with the new version, keep the existing <code>.env</code>, and rebuild. Migrations run on every boot, so new schema changes are applied automatically and the volumes keep the database, uploads and <code>APP_KEY</code>:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>cd /opt/lms
+docker compose up -d --build
+docker compose logs --tail=50 api</code></pre>
+        </div>
+        <p>If a release ever needs a rollback, restore the database dump and the storage tarball, then start the previous version of the files.</p>
+
+        <h3>Routine commands</h3>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose ps                  # status
+docker compose logs -f api web     # follow logs
+docker compose restart api         # after a config change
+docker compose exec api php artisan about
+docker compose down                # stop, keep data
+docker compose down -v             # stop and DELETE data</code></pre>
+        </div>
+      </section>
+
+      <section class="sec" id="troubleshoot">
+        <h2>Deployment troubleshooting</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Symptom</th>
+                <th scope="col">Cause and fix</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Certificate issuance fails</td>
+                <td>DNS does not point at the server yet, port 80 is blocked, or another server on the host already listens on 80/443. Check <code>dig +short</code> and <code>sudo ss -ltnp | grep -E ':80|:443'</code>.</td>
+              </tr>
+              <tr>
+                <td>Storefront loads but every course, category and login request fails</td>
+                <td>The browser cannot reach <code>https://example.com/api/v1/settingsData</code>: Caddy is not forwarding <code>/api</code> to the API, or the storefront image was built with a different <code>WEB_DOMAIN</code>. Check <code>docker compose logs caddy api</code>.</td>
+              </tr>
+              <tr>
+                <td>Login returns 419, or the cart empties on refresh</td>
+                <td>The host in the address bar is not <code>WEB_DOMAIN</code> — usually <code>www.</code> versus the bare name — so the cookie belongs to the other host. Fix the value, then rebuild: <code>docker compose up -d --build</code>.</td>
+              </tr>
+              <tr>
+                <td>Thumbnails and logo are broken</td>
+                <td><code>API_DOMAIN</code> changed without rebuilding the frontend, or the value carries a scheme or slash. Use a bare hostname, then rebuild: <code>docker compose up -d --build web</code>.</td>
+              </tr>
+              <tr>
+                <td>Uploading a video returns 413</td>
+                <td>A proxy of your own sits in front and its body limit is smaller than the file. The bundled Caddy has no limit and the API container allows 1&nbsp;GB; set the same (<code>client_max_body_size 1024m</code> in nginx).</td>
+              </tr>
+              <tr>
+                <td>Video playback stalls after a minute</td>
+                <td>A proxy of your own times the stream out. Raise it to 600s on the API host block; the bundled Caddy, PHP and nginx already allow it.</td>
+              </tr>
+              <tr>
+                <td>API container restarts in a loop</td>
+                <td><code>docker compose logs api</code> shows the reason. Usually MySQL is still initialising (the entrypoint waits up to two minutes) or <code>DB_*</code> in <code>.env</code> disagree with the credentials the MySQL volume was created with.</td>
+              </tr>
+              <tr>
+                <td>Mail never arrives, but nothing errors</td>
+                <td><code>MAIL_MAILER=log</code>, or no queue worker is running. Both are covered above.</td>
+              </tr>
+              <tr>
+                <td>Password-reset or verification links open on <code>http://</code></td>
+                <td><code>APP_URL</code> is not the <code>https://</code> address of the API — it follows <code>API_DOMAIN</code>, so check that value — or a proxy in front of the stack is not forwarding <code>X-Forwarded-Proto</code>.</td>
+              </tr>
+              <tr>
+                <td>The site works on <code>:3000</code> but not on the domain</td>
+                <td>A web server of your own is answering the domain instead of Caddy, or Caddy could not bind ports 80/443. <code>docker compose logs caddy</code> and <code>sudo ss -ltnp | grep -E ':80|:443'</code> show which process owns the ports.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </article>
+
+    <nav class="pager" aria-label="Chapter navigation">
+      <a class="prev" href="docker.html">
+        <span class="pager-dir">Previous chapter</span>
+        Docker deployment
+      </a>
+      <a class="next" href="index.html">
+        <span class="pager-dir">Back to</span>
+        Overview
+      </a>
+    </nav>
+  </main>
+</div>
+
+<footer class="site-foot">
+  <div class="foot-inner">
+    <span>LMS platform documentation &middot; v1.0 &middot; October 2026</span>
+    <a href="index.html">Overview</a>
+    <a href="installation.html">Installation</a>
+    <a href="students.html">Students</a>
+    <a href="instructors.html">Instructors</a>
+    <a href="admin.html">Admin</a>
+    <a href="api.html">API</a>
+    <a href="docker.html">Docker</a>
+    <a href="deployment.html">Deploy</a>
+  </div>
+</footer>
+
+<script src="assets/js/main.js" defer></script>
+</body>
+</html>

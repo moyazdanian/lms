@@ -1,0 +1,8 @@
+# Docker/Linux files must keep LF even when the repo is checked out on Windows,
+# otherwise the entrypoint fails with "$'\r': not found".
+*.sh text eol=lf
+*.conf text eol=lf
+Dockerfile text eol=lf
+Dockerfile.* text eol=lf
+docker-compose*.yml text eol=lf
+*.yml text eol=lf

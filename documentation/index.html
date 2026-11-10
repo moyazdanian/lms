@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Overview — LMS Documentation</title>
+<meta name="description" content="What the LMS platform is, how the Laravel API and the Next.js storefront fit together, and a map of every feature." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Source+Serif+4:opsz,wght@8..60,400..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+
+<header class="topbar">
+  <button class="rail-toggle" id="railToggle" type="button" aria-expanded="false" aria-controls="rail">Contents</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">LMS</span>
+    <span class="brand-text">Documentation</span>
+  </a>
+  <p class="topbar-meta">v1.0 &middot; October 2026</p>
+  <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+</header>
+
+<div class="shell">
+  <nav class="rail" id="rail" aria-label="Documentation contents">
+    <div class="rail-search">
+      <label class="sr-only" for="railFilter">Filter contents</label>
+      <input id="railFilter" type="search" placeholder="Filter sections" autocomplete="off" />
+      <p class="rail-empty" hidden>No section matches that.</p>
+    </div>
+    <ol class="chapters">
+      <li><a href="index.html" class="is-current" aria-current="page"><span class="num">01</span> Overview</a></li>
+      <li><a href="installation.html"><span class="num">02</span> Installation</a></li>
+      <li><a href="students.html"><span class="num">03</span> Student experience</a></li>
+      <li><a href="instructors.html"><span class="num">04</span> Instructor workspace</a></li>
+      <li><a href="admin.html"><span class="num">05</span> Admin panel</a></li>
+      <li><a href="api.html"><span class="num">06</span> API reference</a></li>
+      <li><a href="docker.html"><span class="num">07</span> Docker deployment</a></li>
+      <li><a href="deployment.html"><span class="num">08</span> Deploy to a server</a></li>
+    </ol>
+    <div class="rail-section" id="onThisPage" hidden>
+      <h2 class="rail-heading">On this page</h2>
+      <ul class="toc" id="toc"></ul>
+    </div>
+  </nav>
+
+  <main class="content" id="content">
+    <article class="chapter">
+      <header class="chapter-open">
+        <span class="chapter-num" aria-hidden="true">01</span>
+        <h1>Overview</h1>
+        <p class="chapter-lede">A complete learning platform in two applications: a Laravel API with a Filament admin panel, and a Next.js storefront. This manual covers what it does, how to install it, and how every screen fits together.</p>
+        <p class="chapter-meta">Seven chapters. About 40 minutes to read end to end. If you only want the site running, jump to Installation.</p>
+      </header>
+
+      <section class="sec" id="what-it-is">
+        <h2>What this product is</h2>
+        <p class="lead-in">A self-hosted marketplace for online courses. Instructors publish lessons, students buy and watch them, and administrators review everything from a control panel — with no code editing required to run the site day to day.</p>
+        <p>The download contains two applications that share one database:</p>
+        <ul>
+          <li><strong>Backend</strong> — a Laravel 12 application that serves the REST API under <code>/api/v1</code>, owns the admin panel at <code>/admin</code>, stores and streams lesson media, talks to payment gateways, and issues certificates.</li>
+          <li><strong>Storefront</strong> — a Next.js 15 front end that renders the public site (catalog, course pages, checkout) and the logged-in dashboards for students and instructors.</li>
+        </ul>
+        <p>Everything a site owner normally wants to change at launch — site name, logo, favicon, homepage sections, footer, terms and privacy text, cookie banner, payment gateways, instructor commission, payout methods, and where lesson videos are stored — is edited in the admin panel and picked up by the storefront immediately.</p>
+      </section>
+
+      <section class="sec" id="architecture">
+        <h2>How the two applications fit together</h2>
+        <p>The storefront never talks to the database. It calls the API as the logged-in user, using Sanctum session cookies that the backend issues; the API enforces every permission, price, and access rule.</p>
+
+        <div class="flow">
+          <div class="flow-node">
+            <h3>Browser</h3>
+            <p><span class="tag">localhost:3000</span> &mdash; public pages, student dashboard, instructor workspace. Server-rendered by Next.js, then hydrated.</p>
+          </div>
+          <div class="flow-arrow" aria-hidden="true"></div>
+          <div class="flow-node is-core">
+            <h3>Laravel API</h3>
+            <p><span class="tag">localhost:8000/api/v1</span> &mdash; authentication, catalog, cart, checkout, enrollments, progress, quizzes, certificates, instructor authoring, payouts. Session cookie + CSRF for browser requests.</p>
+          </div>
+          <div class="flow-arrow" aria-hidden="true"></div>
+          <div class="flow-row">
+            <div class="flow-node">
+              <h3>Database</h3>
+              <p>MySQL 8 or MariaDB 10.4+. Queue jobs, cache, and sessions use the same connection.</p>
+            </div>
+            <div class="flow-node">
+              <h3>Private media</h3>
+              <p>Local private disk while developing, any S3-compatible bucket in production. Never public.</p>
+            </div>
+            <div class="flow-node">
+              <h3>Payment gateways</h3>
+              <p>Stripe, PayPal, Mollie, Razorpay. Gateways call back to the webhook endpoints after payment.</p>
+            </div>
+            <div class="flow-node">
+              <h3>Mail</h3>
+              <p>Verification links, password resets, instructor and payout notifications.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="note">
+          <span class="note-title">The admin panel lives on the backend</span>
+          <p>Filament renders at <code>http://localhost:8000/admin</code>. Students and instructors never see it; they use the Next.js storefront only. Reach for the panel when you need to approve a course, issue a refund, edit legal text, or change a gateway key.</p>
+        </div>
+      </section>
+
+      <section class="sec" id="roles">
+        <h2>Three roles, one platform</h2>
+        <p>Every account has one role, and each role sees a different surface.</p>
+        <div class="table-wrap">
+          <table>
+            <caption>How each role is created and what it can reach</caption>
+            <thead>
+              <tr>
+                <th scope="col">Role</th>
+                <th scope="col">How an account gets it</th>
+                <th scope="col">What it can do</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Student</th>
+                <td>Default for every new registration</td>
+                <td>Browse and buy courses, watch lessons, track progress, take quizzes, earn and download certificates, review courses, keep a wishlist, open support tickets, export or delete their own data.</td>
+              </tr>
+              <tr>
+                <th scope="row">Instructor</th>
+                <td>Applied for from the storefront, approved by an administrator</td>
+                <td>Everything a student can do, plus: build courses with a step-by-step authoring flow, manage curriculum and attachments, write the course quiz, see sales and earnings, and request payouts.</td>
+              </tr>
+              <tr>
+                <th scope="row">Admin</th>
+                <td>Created by the database seeder, or promoted in the panel</td>
+                <td>Full control: users, instructors, courses and approvals, categories, coupons, orders, payments, enrollments, certificates, quizzes, content, legal text, support tickets, notifications, and every setting.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="sec" id="stack">
+        <h2>Technology and versions</h2>
+        <p>The stack is deliberately mainstream: Laravel and Next.js, no proprietary runtime, nothing that needs a special host.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Layer</th>
+                <th scope="col">What runs there</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Front end</th>
+                <td>Next.js 15.3 (App Router, React 19), Tailwind CSS 4, Radix UI primitives, TanStack Query 5 for data fetching, axios for API calls, TipTap and BlockNote for rich text.</td>
+              </tr>
+              <tr>
+                <th scope="row">Backend</th>
+                <td>Laravel 12 on PHP 8.2+ (developed on 8.4), Filament 4 admin panel on Livewire 3, Sanctum 4 for cookie-based single-page-app sessions, Socialite for Google sign-in.</td>
+              </tr>
+              <tr>
+                <th scope="row">Database</th>
+                <td>MySQL 8 or MariaDB 10.4+. Queue, cache, and session drivers all use the database by default, so there is no Redis requirement.</td>
+              </tr>
+              <tr>
+                <th scope="row">Payments</th>
+                <td>Stripe, PayPal, Mollie, and Razorpay, each switchable in the admin panel; cash-free checkout is also supported for free or fully discounted carts. Stripe and Mollie use signed webhooks; PayPal and Razorpay verify on return.</td>
+              </tr>
+              <tr>
+                <th scope="row">Media</th>
+                <td>Lesson videos live on a private disk: local by default, or any S3-compatible bucket (AWS S3, Cloudflare R2, MinIO, DigitalOcean Spaces, Wasabi). Two delivery modes: stream through the app, or redirect to time-limited signed URLs.</td>
+              </tr>
+              <tr>
+                <th scope="row">Certificates</th>
+                <td>Rendered as PDFs with dompdf, stored with a public verification code so anyone can check a certificate at <code>/certificates/{code}</code>.</td>
+              </tr>
+              <tr>
+                <th scope="row">Testing</th>
+                <td>Pest 3 on PHPUnit 11, with feature tests covering checkout, approvals, payouts, media access, certificates, and authentication.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="sec" id="in-the-box">
+        <h2>What ships in the box</h2>
+        <p>Two independent applications, plus this manual. You can rename or move the folders; each one is deployed separately.</p>
+        <pre class="tree"><b>lms/</b>
+├─ <b>localhost/</b>                     <i>Laravel 12 application — API, admin panel, jobs, tests</i>
+│  ├─ app/Filament/                 <i>admin panel: resources, pages, widgets</i>
+│  ├─ app/Http/Controllers/         <i>public, auth, instructor, and webhook controllers</i>
+│  ├─ app/Services/                 <i>payments, payouts, approvals, certificates, storage</i>
+│  ├─ app/Console/Commands/         <i>media:migrate-to-cloud — move media to a bucket</i>
+│  ├─ database/migrations/          <i>35 migrations, run with migrate --seed</i>
+│  ├─ database/seeders/             <i>homepage content, features, default administrator</i>
+│  ├─ routes/api.php                <i>every API route, all under /api/v1</i>
+│  └─ tests/Feature/                <i>Pest feature tests</i>
+├─ <b>frontend/</b>                      <i>Next.js 15 storefront and dashboards</i>
+│  ├─ src/app/(main)/               <i>public site: catalog, course, cart, checkout, legal pages</i>
+│  ├─ src/app/(dashboard)/          <i>student and instructor areas behind the login</i>
+│  ├─ src/lib/api/                  <i>one module per API area</i>
+│  └─ src/components/               <i>UI: course detail, teaching tools, quiz, payments</i>
+└─ <b>documentation/</b>                 <i>this manual — open index.html in a browser</i></pre>
+        <p>The documentation is static HTML, CSS, and JavaScript with no build step. Open <code>documentation/index.html</code> directly, or serve the folder from any web server.</p>
+      </section>
+
+      <section class="sec" id="feature-map">
+        <h2>Feature map</h2>
+        <p>Where to read about each part of the product.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Feature area</th>
+                <th scope="col">Highlights</th>
+                <th scope="col">Chapter</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Catalog and course pages</th>
+                <td>Homepage sections built in the panel, category browsing, filters and sorting, instructor directory, course detail with tabs, free preview.</td>
+                <td><a href="students.html">Student experience</a></td>
+              </tr>
+              <tr>
+                <th scope="row">Cart, coupons, checkout</th>
+                <td>Guest cart that survives login, percent and fixed coupons with usage limits, multi-gateway checkout, zero-total free enrollment, payment success and failure pages.</td>
+                <td><a href="students.html">Student experience</a></td>
+              </tr>
+              <tr>
+                <th scope="row">Classroom</th>
+                <td>Lesson player, per-lesson progress, downloadable attachments, sequential navigation, purchase-gated streaming.</td>
+                <td><a href="students.html">Student experience</a></td>
+              </tr>
+              <tr>
+                <th scope="row">Assessment and certificates</th>
+                <td>Per-course quiz with pass mark and attempt limit, option-level grading with explanations, PDF certificates, public verification, revocation and retake.</td>
+                <td><a href="students.html">Student experience</a></td>
+              </tr>
+              <tr>
+                <th scope="row">Community and support</th>
+                <td>Star reviews with written feedback, wishlist, in-app notifications, support tickets with threaded replies.</td>
+                <td><a href="students.html">Student experience</a></td>
+              </tr>
+              <tr>
+                <th scope="row">Instructor workspace</th>
+                <td>Application flow, dashboard with sales charts, five-step course authoring, curriculum builder, quiz builder, attachments, edit requests for live courses.</td>
+                <td><a href="instructors.html">Instructor workspace</a></td>
+              </tr>
+              <tr>
+                <th scope="row">Earnings and payouts</th>
+                <td>Commission split per sale, earnings ledger, revenue and enrollment charts, payout requests with a minimum threshold and admin approval.</td>
+                <td><a href="instructors.html">Instructor workspace</a></td>
+              </tr>
+              <tr>
+                <th scope="row">Administration</th>
+                <td>19 resources and 6 settings pages in the Filament panel, with dashboards, approvals, refunds, and media previews.</td>
+                <td><a href="admin.html">Admin panel</a></td>
+              </tr>
+              <tr>
+                <th scope="row">Content and legal text</th>
+                <td>Homepage content blocks, footer and social links, terms and privacy written in the panel, cookie consent banner with its own policy page.</td>
+                <td><a href="admin.html">Admin panel</a></td>
+              </tr>
+              <tr>
+                <th scope="row">Data protection</th>
+                <td>Self-service data export and account deletion, cookie preferences, no marketing trackers in the box.</td>
+                <td><a href="students.html">Student experience</a></td>
+              </tr>
+              <tr>
+                <th scope="row">REST API</th>
+                <td>Versioned endpoints for every feature, grouped by audience, with session or token authentication.</td>
+                <td><a href="api.html">API reference</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="sec" id="next">
+        <h2>Where to go next</h2>
+        <div class="cards">
+          <a class="card" href="installation.html">
+            <span class="card-tag">Chapter 02</span>
+            <h3>Installation</h3>
+            <p>Requirements, environment files, database, media storage, and first-run settings.</p>
+          </a>
+          <a class="card" href="students.html">
+            <span class="card-tag">Chapter 03</span>
+            <h3>Student experience</h3>
+            <p>Catalog, checkout, classroom, quizzes, certificates, and account tools.</p>
+          </a>
+          <a class="card" href="instructors.html">
+            <span class="card-tag">Chapter 04</span>
+            <h3>Instructor workspace</h3>
+            <p>Applying, authoring courses, building curriculum, and getting paid.</p>
+          </a>
+          <a class="card" href="admin.html">
+            <span class="card-tag">Chapter 05</span>
+            <h3>Admin panel</h3>
+            <p>Every resource and settings page, and what each one controls.</p>
+          </a>
+          <a class="card" href="api.html">
+            <span class="card-tag">Chapter 06</span>
+            <h3>API reference</h3>
+            <p>Endpoint groups, authentication, and the data model behind them.</p>
+          </a>
+        </div>
+      </section>
+    </article>
+
+    <nav class="pager" aria-label="Chapter navigation">
+      <a class="prev" href="index.html">
+        <span class="pager-dir">Back to</span>
+        Overview
+      </a>
+      <a class="next" href="installation.html">
+        <span class="pager-dir">Next chapter</span>
+        Installation
+      </a>
+    </nav>
+  </main>
+</div>
+
+<footer class="site-foot">
+  <div class="foot-inner">
+    <span>LMS platform documentation &middot; v1.0 &middot; October 2026</span>
+    <a href="installation.html">Installation</a>
+    <a href="students.html">Students</a>
+    <a href="instructors.html">Instructors</a>
+    <a href="admin.html">Admin</a>
+    <a href="api.html">API</a>
+    <a href="docker.html">Docker</a>
+    <a href="deployment.html">Deploy</a>
+  </div>
+</footer>
+
+<script src="assets/js/main.js" defer></script>
+</body>
+</html>
