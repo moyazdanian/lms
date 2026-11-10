@@ -39,11 +39,13 @@ The command will output something like:
 > Ready! Your webhook signing secret is whsec_xxxxxxxxxxxx (^C to quit)
 ```
 
-Copy this secret and add it to your `.env` file:
+Paste this secret into the admin panel: **Settings → Payment Gateways → Stripe
+Webhook Signing Secret**, then save. It is stored in the database alongside the
+other gateway credentials.
 
-```env
-STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxx
-```
+Setting `STRIPE_WEBHOOK_SECRET` in `.env` still works as a fallback, for
+installations that configured Stripe before this panel field existed. A value
+saved in the panel always wins over the environment variable.
 
 ## Production Setup
 
@@ -55,13 +57,11 @@ STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxx
    ```
    https://yourdomain.com/api/v1/webhooks/stripe
    ```
-4. Select the following events:
+4. Select the following events (these are the ones the controller acts on):
    - `checkout.session.completed`
-   - `payment_intent.succeeded`
-   - `payment_intent.payment_failed`
-   - `charge.refunded`
-   - `invoice.payment_succeeded`
-   - `invoice.payment_failed`
+   - `checkout.session.async_payment_succeeded`
+   - `checkout.session.async_payment_failed`
+   - `checkout.session.expired`
 5. Click "Add endpoint"
 
 ### 2. Copy the Signing Secret
@@ -70,13 +70,12 @@ STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxx
 2. Click "Reveal" next to "Signing secret"
 3. Copy the secret (starts with `whsec_`)
 
-### 3. Add to Production Environment
+### 3. Save the Secret in the Admin Panel
 
-Add to your production `.env` file:
-
-```env
-STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxx
-```
+Open `/admin` → **Settings → Payment Gateways** and paste the secret into
+**Stripe Webhook Signing Secret**. The endpoint address is shown next to the
+field, so the value you register in Stripe and the field in the panel cannot
+drift apart unnoticed.
 
 ## Verification
 

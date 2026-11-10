@@ -1,8 +1,6 @@
 "use client";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { teachers } from "@/lib/data";
-import { courses } from "@/lib/data";
 import { avatarSrc } from "@/lib/avatar";
 import Course from "@/components/Course";
 import {

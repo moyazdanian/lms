@@ -257,7 +257,7 @@
         <p>The site's identity: site name, logo, and favicon. The site name is used in page titles across the storefront, in the panel brand, in the footer, and on issued certificates. Uploading a new logo or favicon removes the previous file instead of leaving it behind.</p>
 
         <h3>Payment Gateways</h3>
-        <p>Stripe, PayPal, Mollie, and Razorpay, each with its own switch and its own credential fields — Stripe's secret key, PayPal's mode and client pair, Mollie's API key, Razorpay's key pair. Only enabled gateways are offered at checkout, so a gateway can be prepared and switched on later. Webhook URLs for Stripe and Mollie are shown next to the fields that need them.</p>
+        <p>Stripe, PayPal, Mollie, and Razorpay, each with its own switch and its own credential fields — Stripe's secret key and webhook signing secret, PayPal's mode and client pair, Mollie's API key, Razorpay's key pair. Only enabled gateways are offered at checkout, so a gateway can be prepared and switched on later. Every value lives in the database, so nothing here needs to be edited into <code>.env</code>; the required webhook endpoint is printed under the field that needs it (Stripe) or next to the credential (Mollie). Secrets are write-only in the panel: an empty box keeps the saved value instead of clearing it.</p>
 
         <h3>Payout Methods</h3>
         <p>Two things in one screen: the commercial rules — the instructor commission percentage and the minimum payout amount — and the list of payout methods instructors may choose from. Each method has a value, a label, and a label for the account field it asks for, so adding a new payout route is a matter of adding a row.</p>

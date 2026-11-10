@@ -41,6 +41,7 @@ class General_setting extends Model
         // Payment gateway credentials (configured in the admin panel).
         'stripe_enabled',
         'stripe_secret',
+        'stripe_webhook_secret',
         'paypal_enabled',
         'paypal_mode',
         'paypal_client_id',
@@ -72,6 +73,7 @@ class General_setting extends Model
     protected $hidden = [
         // Secrets must never leak to any API response.
         'stripe_secret',
+        'stripe_webhook_secret',
         'paypal_client_secret',
         'mollie_api_key',
         'razorpay_key_secret',

@@ -61,6 +61,20 @@ class PaymentGateways extends Page
                                 ? $state
                                 : $this->record?->stripe_secret),
 
+                        TextInput::make('stripe_webhook_secret')
+                            ->label('Stripe Webhook Signing Secret')
+                            ->password()
+                            ->revealable()
+                            ->placeholder('whsec_...')
+                            ->helperText(fn () => 'Stripe dashboard → Developers → Webhooks → add the endpoint below, then paste its signing secret here. Endpoint: '
+                                . rtrim((string) config('app.url'), '/')
+                                . '/api/v1/webhooks/stripe')
+                            ->columnSpan(2)
+                            ->formatStateUsing(fn () => $this->record?->stripe_webhook_secret)
+                            ->dehydrateStateUsing(fn ($state) => filled($state)
+                                ? $state
+                                : $this->record?->stripe_webhook_secret),
+
                         Toggle::make('paypal_enabled')
                             ->label('Enable PayPal')
                             ->live()

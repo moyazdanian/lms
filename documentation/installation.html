@@ -246,7 +246,7 @@ DB_PASSWORD=</code></pre>
               </tr>
               <tr>
                 <th scope="row"><code>STRIPE_*</code></th>
-                <td>Secret key, publishable key, and webhook signing secret. PayPal, Mollie, and Razorpay keys are stored in the admin panel instead.</td>
+                <td>Optional fallback for the Stripe secret key and webhook signing secret. Every gateway credential — including the Stripe signing secret — is normally saved in the admin panel, which takes priority over these values. PayPal, Mollie, and Razorpay credentials exist only in the panel.</td>
                 <td>empty</td>
               </tr>
               <tr>

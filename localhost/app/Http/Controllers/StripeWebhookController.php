@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
+use App\Services\Payments\GatewayConfigService;
 use App\Services\Payments\PaymentFinalizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -11,13 +12,25 @@ use Stripe\Webhook;
 
 class StripeWebhookController extends Controller
 {
-    public function handle(Request $request, PaymentFinalizer $finalizer)
+    public function handle(Request $request, PaymentFinalizer $finalizer, GatewayConfigService $config)
     {
+        // Signature verification needs the signing secret from the panel
+        // (Settings > Payment Gateways), wherever Stripe is reachable.
+        $secret = $config->stripe()['webhook_secret'];
+
+        if (blank($secret)) {
+            Log::error('Stripe webhook rejected: no signing secret configured', [
+                'hint' => 'Settings > Payment Gateways > Stripe webhook signing secret',
+            ]);
+
+            return response()->json(['message' => 'Webhook signing secret is not configured'], 400);
+        }
+
         try {
             $event = Webhook::constructEvent(
                 $request->getContent(),
                 $request->header('Stripe-Signature', ''),
-                config('services.stripe.webhook_secret')
+                $secret
             );
         } catch (SignatureVerificationException|\UnexpectedValueException $e) {
             Log::warning('Stripe webhook rejected', ['error' => $e->getMessage()]);

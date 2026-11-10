@@ -7,7 +7,23 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-No unreleased changes yet.
+### Added
+
+- Admin panel: the Stripe webhook signing secret is now saved with the other
+  gateway credentials (Settings → Payment Gateways) instead of requiring an
+  environment variable. The endpoint address is printed under the field, and a
+  missing secret is logged with an explicit hint instead of a generic signature
+  error. `STRIPE_WEBHOOK_SECRET` still works as a fallback.
+
+### Changed
+
+- Storefront dependencies reviewed with `npm audit`: removed the unused `ai`
+  package and the unused direct `@tiptap/*` and `@blocknote/mantine`
+  dependencies (BlockNote already brings its own editor stack), updated
+  BlockNote to 0.57 and PostCSS to 8.5.32, and dropped unused imports from the
+  instructor profile page.
+- Documented where every gateway credential lives, including the Stripe signing
+  secret, in the installation and admin guides and in the Stripe webhook notes.
 
 ## [1.0.0] — 2026-11-10
 

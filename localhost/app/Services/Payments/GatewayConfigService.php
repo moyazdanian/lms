@@ -61,6 +61,10 @@ class GatewayConfigService
         return [
             'enabled' => filled($secret),
             'secret' => $secret,
+            // The signing secret has no .env requirement: it is entered in the
+            // panel like the other gateway credentials. The env value stays as
+            // a fallback for installs that set it before the panel field.
+            'webhook_secret' => $s?->stripe_webhook_secret ?: config('services.stripe.webhook_secret'),
         ];
     }
 
