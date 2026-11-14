@@ -14,7 +14,7 @@ export default function CourseDetailsTabs({ course, user }) {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-      <TabsList className="grid grid-cols-4 dark:bg-neutral-900 w-full mb-6">
+      <TabsList className="grid grid-cols-3 dark:bg-neutral-900 w-full mb-6">
         <TabsTrigger
           value="overview"
           className="data-[state=active]:bg-blue-500 data-[state=active]:text-white"
@@ -36,13 +36,13 @@ export default function CourseDetailsTabs({ course, user }) {
           <MessageSquare className="w-4 h-4 mr-2" />
           Reviews ({course.reviews?.length || 0})
         </TabsTrigger>
-        <TabsTrigger
+        {/* <TabsTrigger
           value="instructor"
           className="data-[state=active]:bg-blue-500 data-[state=active]:text-white"
         >
           <User className="w-4 h-4 mr-2" />
           Instructor
-        </TabsTrigger>
+        </TabsTrigger> */}
       </TabsList>
 
       <TabsContent value="overview" className="space-y-8">
@@ -53,9 +53,9 @@ export default function CourseDetailsTabs({ course, user }) {
         <SectionsAndLessonsSidebar course={course} />
       </TabsContent>
 
-      <TabsContent value="instructor">
+      {/* <TabsContent value="instructor">
         <CourseDetailsInstructorTab instructor={course.instructor} />
-      </TabsContent>
+      </TabsContent> */}
 
       <TabsContent value="reviews">
         <CourseDetailsReviewsTab course={course} user={user} />

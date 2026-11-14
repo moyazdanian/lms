@@ -16,7 +16,6 @@ import { apiUrl } from "@/lib/api/baseUrl";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Online Courses",
   description: "Learn new skills with expert-led video courses.",
   alternates: { canonical: "/" },
 };
@@ -24,24 +23,24 @@ export const metadata = {
 export default async function Home() {
   const settingDataUrl = apiUrl("/api/v1/settingsData");
 
-const [siteContentData, settingResponse, categories, latestPosts] =
-  await Promise.all([
-    getSiteContent(),
-    fetch(settingDataUrl, {
-      next: {
-        revalidate: 60,
-        tags: ["home-settings"],
-      },
-    }),
-    getCategories(),
-    getLatestBlogPosts(3),
-  ]);
+  const [siteContentData, settingResponse, categories, latestPosts] =
+    await Promise.all([
+      getSiteContent(),
+      fetch(settingDataUrl, {
+        next: {
+          revalidate: 60,
+          tags: ["home-settings"],
+        },
+      }),
+      getCategories(),
+      getLatestBlogPosts(3),
+    ]);
 
-if (!settingResponse.ok) {
-  throw new Error("Failed to fetch home settings");
-}
+  if (!settingResponse.ok) {
+    throw new Error("Failed to fetch home settings");
+  }
 
-const settingData = await settingResponse.json();
+  const settingData = await settingResponse.json();
 
   const section = (key) => siteContentData.find((item) => item.section === key);
 

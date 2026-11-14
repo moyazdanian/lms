@@ -42,7 +42,7 @@ class PaymentGateways extends Page
         return $schema
             ->components([
                 Section::make('Payment Gateways')
-                    ->description('Enable a gateway and fill its credentials. Enabled gateways appear automatically on the storefront checkout. Keys are stored in the database — never commit them to version control.')
+                    ->description('Enable a gateway and fill its credentials. Enabled gateways appear automatically on the storefront checkout.')
                     ->columns(2)
                     ->components([
                         Toggle::make('stripe_enabled')
@@ -54,7 +54,7 @@ class PaymentGateways extends Page
                             ->password()
                             ->revealable()
                             ->placeholder('sk_live_... or sk_test_...')
-                            ->helperText('Leave empty to keep using the STRIPE_SECRET_KEY from .env (existing installations).')
+                            // ->helperText('Leave empty to keep using the STRIPE_SECRET_KEY from .env (existing installations).')
                             ->columnSpan(2)
                             ->formatStateUsing(fn () => $this->record?->stripe_secret)
                             ->dehydrateStateUsing(fn ($state) => filled($state)

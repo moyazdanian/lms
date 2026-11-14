@@ -116,6 +116,11 @@ class Course extends Model
         return $this->hasMany(Review::class)->where('parent_id' , null)->latest();
     }
 
+    public function quiz()
+    {
+        return $this->hasOne(Quiz::class);
+    }
+
     /**
      * Courses visible to the general public: approved by admin, active,
      * and not owned by a rejected instructor.

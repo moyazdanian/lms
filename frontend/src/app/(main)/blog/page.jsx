@@ -28,14 +28,14 @@ export default async function BlogPage({ searchParams }) {
 
   return (
     <div className="mx-auto max-w-350 px-6 py-12">
-      <header className="mb-10 max-w-2xl">
+      {/* <header className="mb-10 max-w-2xl">
         <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
           Blog
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-neutral-400 sm:text-base">
           Guides, deep dives and notes from the people teaching here.
-        </p>
-      </header>
+        </p> 
+      </header> */}
 
       {posts.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

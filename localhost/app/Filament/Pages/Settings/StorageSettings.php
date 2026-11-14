@@ -63,7 +63,6 @@ class StorageSettings extends Page
                                 's3' => 'S3-compatible cloud storage',
                             ])
                             ->native(false)
-                            ->placeholder('Use the .env default (LESSON_VIDEO_DISK)')
                             ->helperText('Existing uploads are NOT moved automatically — run `php artisan media:migrate-to-cloud` after switching disks.')
                             ->columnSpan(1),
                         Select::make('video_serving_mode')
@@ -73,8 +72,7 @@ class StorageSettings extends Page
                                 'signed' => 'Signed URLs — browser is redirected to a time-limited cloud URL',
                             ])
                             ->native(false)
-                            ->placeholder('Use the .env default (VIDEO_SERVING_MODE: proxy)')
-                            ->helperText('"Signed" requires an S3-compatible disk that supports temporary URLs; it falls back to proxy automatically.')
+                             ->helperText('"Signed" requires an S3-compatible disk that supports temporary URLs; it falls back to proxy automatically.')
                             ->columnSpan(1),
                         Placeholder::make('effective_config')
                             ->label('Currently active')
@@ -93,10 +91,9 @@ class StorageSettings extends Page
                     ->columns(2)
                     ->components([
                         Toggle::make('s3_enabled')
-                            ->label('Apply panel credentials (override .env)')
                             ->live()
                             ->columnSpan(2)
-                            ->helperText('Leave disabled to keep using the AWS_* values from .env. Save your credentials, then use Test Connection below to verify the bucket before switching the Lesson Video Disk to S3.'),
+                            ->helperText('If Leave disabled will use local directory to save and serve videos. Save your credentials, then use Test Connection below to verify the bucket before switching the Lesson Video Disk to S3.'),
                         TextInput::make('s3_access_key_id')
                             ->label('Access Key ID')
                             ->columnSpan(1),

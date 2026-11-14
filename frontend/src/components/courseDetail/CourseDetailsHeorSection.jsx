@@ -134,13 +134,13 @@ export default function CourseDetailsHeroSection() {
                     {course.enrollments_count?.toLocaleString() || 0}+ students
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                   <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                   <span>
                     {course.rating || "No Rating Yet"} (
                     {course.reviews?.length || 0} reviews)
                   </span>
-                </div>
+                </div> */}
                 <div className="flex items-center gap-2">
                   <Clock className="w-5 h-5" />
                   <span>{formatDuration(totalDuration)} total</span>

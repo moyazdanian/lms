@@ -100,7 +100,7 @@ class CourseController extends Controller
     {
         $course = Course::publicVisible()
             ->where('slug' , $slug)
-            ->with(['sections', 'reviews', 'instructor:id,name,avatar', 'sections.lessons'])
+            ->with(['sections', 'reviews', 'instructor:id,name,avatar', 'sections.lessons' , 'quiz'])
             ->withCount(['enrollments'])
             ->withAvg('reviews', 'rating')
             ->first();

@@ -20,8 +20,8 @@ export default function CourseDetailsReviewsTab({ course, user }) {
   const [reply, setReply] = useState(null);
 
   return (
-    <div className="grid lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2">
+    <div className="">
+      <div className="">
         {/* Add Review */}
         {user && <AddReviewForm courseId={course.id} />}
 
@@ -35,6 +35,7 @@ export default function CourseDetailsReviewsTab({ course, user }) {
                 courseId={course.id}
                 reply={reply}
                 setReply={setReply}
+                user={user}
               />
             ))
           ) : (
@@ -57,7 +58,7 @@ export default function CourseDetailsReviewsTab({ course, user }) {
       </div>
 
       {/* Reviews Stats */}
-      <ReviewsStats course={course} />
+      {/* <ReviewsStats course={course} /> */}
     </div>
   );
 }
@@ -88,7 +89,7 @@ const AddReviewForm = ({ courseId }) => {
           {({ errors, getFieldProps, handleSubmit }) => (
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium mb-2">
                     Your Rating
                   </label>
@@ -99,7 +100,7 @@ const AddReviewForm = ({ courseId }) => {
                       </button>
                     ))}
                   </div>
-                </div>
+                </div> */}
                 <Textarea
                   placeholder="Share your experience with this course..."
                   {...getFieldProps("review")}
@@ -125,7 +126,7 @@ const AddReviewForm = ({ courseId }) => {
 };
 
 // ReviewItem.jsx
-const ReviewItem = ({ review, courseId, reply, setReply }) => {
+const ReviewItem = ({ review, courseId, reply, setReply, user }) => {
   const { mutate: storeCommentQuery, isPending: isSubmittingReview } =
     useStoreReview();
 
@@ -146,7 +147,7 @@ const ReviewItem = ({ review, courseId, reply, setReply }) => {
                   {formatDate(review.created_at)}
                 </p>
               </div>
-              <div className="flex items-center gap-1">
+              {/* <div className="flex items-center gap-1">
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
@@ -157,22 +158,26 @@ const ReviewItem = ({ review, courseId, reply, setReply }) => {
                     }`}
                   />
                 ))}
-              </div>
+              </div> */}
             </div>
 
             <p className="text-gray-700 dark:text-gray-300">{review.comment}</p>
 
-            <div className="flex items-center gap-4 mt-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8"
-                onClick={() => setReply(reply === review.id ? null : review.id)}
-              >
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Reply
-              </Button>
-            </div>
+            {user && (
+              <div className="flex items-center gap-4 mt-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8"
+                  onClick={() =>
+                    setReply(reply === review.id ? null : review.id)
+                  }
+                >
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Reply
+                </Button>
+              </div>
+            )}
 
             {reply === review.id && (
               <div className="mt-4">
@@ -243,58 +248,58 @@ const ReviewItem = ({ review, courseId, reply, setReply }) => {
 };
 
 // ReviewsStats.jsx
-const ReviewsStats = ({ course }) => {
-  const ratings = [5, 4, 3, 2, 1];
-  const totalReviews = course.reviews?.length || 0;
-  const averageRating = course.rating || 4.5;
+// const ReviewsStats = ({ course }) => {
+//   const ratings = [5, 4, 3, 2, 1];
+//   const totalReviews = course.reviews?.length || 0;
+//   const averageRating = course.rating || 4.5;
 
-  return (
-    <Card className="sticky top-6">
-      <CardHeader>
-        <CardTitle>Rating Breakdown</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-center mb-6">
-          <div className="text-5xl font-bold mb-2">{averageRating}</div>
-          <div className="flex items-center justify-center gap-1 mb-2">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`w-5 h-5 ${
-                  i < Math.floor(averageRating)
-                    ? "fill-yellow-400 text-yellow-400"
-                    : "fill-gray-300 text-gray-300"
-                }`}
-              />
-            ))}
-          </div>
-          <p className="text-sm text-gray-500">{totalReviews} reviews</p>
-        </div>
+//   return (
+//     <Card className="sticky top-6">
+//       <CardHeader>
+//         <CardTitle>Rating Breakdown</CardTitle>
+//       </CardHeader>
+//       <CardContent>
+//         <div className="text-center mb-6">
+//           <div className="text-5xl font-bold mb-2">{averageRating}</div>
+//           <div className="flex items-center justify-center gap-1 mb-2">
+//             {[...Array(5)].map((_, i) => (
+//               <Star
+//                 key={i}
+//                 className={`w-5 h-5 ${
+//                   i < Math.floor(averageRating)
+//                     ? "fill-yellow-400 text-yellow-400"
+//                     : "fill-gray-300 text-gray-300"
+//                 }`}
+//               />
+//             ))}
+//           </div>
+//           <p className="text-sm text-gray-500">{totalReviews} reviews</p>
+//         </div>
 
-        <div className="space-y-3">
-          {ratings.map((stars) => {
-            const count =
-              course.reviews?.filter((r) => r.rating === stars).length || 0;
-            const percentage =
-              totalReviews > 0 ? (count / totalReviews) * 100 : 0;
+//         <div className="space-y-3">
+//           {ratings.map((stars) => {
+//             const count =
+//               course.reviews?.filter((r) => r.rating === stars).length || 0;
+//             const percentage =
+//               totalReviews > 0 ? (count / totalReviews) * 100 : 0;
 
-            return (
-              <div key={stars} className="flex items-center gap-2">
-                <span className="text-sm w-8">{stars}★</span>
-                <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-yellow-400"
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
-                <span className="text-sm w-12 text-gray-500">
-                  {Math.round(percentage)}%
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
+//             return (
+//               <div key={stars} className="flex items-center gap-2">
+//                 <span className="text-sm w-8">{stars}★</span>
+//                 <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+//                   <div
+//                     className="h-full bg-yellow-400"
+//                     style={{ width: `${percentage}%` }}
+//                   />
+//                 </div>
+//                 <span className="text-sm w-12 text-gray-500">
+//                   {Math.round(percentage)}%
+//                 </span>
+//               </div>
+//             );
+//           })}
+//         </div>
+//       </CardContent>
+//     </Card>
+//   );
+// };

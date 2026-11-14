@@ -84,6 +84,7 @@ class CourseResource extends JsonResource
                     ];
                 });
             }),
+            'hasQuiz' => $this->whenLoaded('quiz') ? true : false,
             'enrollments_count' => $this->enrollments_count ?? 0,
             'rating' => $this->rating ?? null,
 

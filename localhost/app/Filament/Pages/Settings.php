@@ -50,10 +50,10 @@ class Settings extends Page
                         TextInput::make('site_name')
                             ->required()
                             ->maxLength(255),
-                        TextInput::make('language')
-                            ->default('en')
-                            ->required()
-                            ->maxLength(20),
+                        // TextInput::make('language')
+                        //     ->default('en')
+                        //     ->required()
+                        //     ->maxLength(20),
                         TextInput::make('contact_email')
                             ->email()
                             ->required()

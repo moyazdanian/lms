@@ -71,7 +71,7 @@ export function PricingStep({ values, setField, errors }) {
           />
         </FormField>
 
-        <FormField
+        {/* <FormField
           id="currency"
           label="Currency"
           required
@@ -92,7 +92,7 @@ export function PricingStep({ values, setField, errors }) {
               ))}
             </SelectContent>
           </Select>
-        </FormField>
+        </FormField> */}
       </div>
 
       <Card className="h-fit bg-muted/40">

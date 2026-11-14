@@ -9,13 +9,6 @@ import { HiMiniAcademicCap } from "react-icons/hi2";
 import { Badge } from "./ui/badge";
 import ShowPrice from "./ui/ShowPrice";
 
-/**
- * Modern course card matching the redesigned homepage: quiet dark panel,
- * hairline border, gradient discount pill (the site's signature
- * rose→fuchsia gradient), instructor row and a compact add-to-cart.
- * Same data shape (CoursesResource) and the same client buttons as before —
- * only the presentation changed.
- */
 export default function Course({ course }) {
   const hasDiscount =
     course?.discount_price &&
@@ -103,9 +96,9 @@ export default function Course({ course }) {
 
         {/* Meta row */}
         <div className="mt-2.5 flex flex-wrap items-center gap-x-3.5 gap-y-1 text-[12px] text-neutral-500">
-          <span className="text-amber-400">
+          {/*<span className="text-amber-400">
             ★ {(course.rating || 0).toFixed?.(1) || course.rating || "New"}
-          </span>
+          </span>*/}
           <span className="flex items-center gap-1">
             <HiMiniAcademicCap className="h-3.5 w-3.5" />
             {course.enrollments_count || 0}

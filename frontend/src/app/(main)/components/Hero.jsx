@@ -221,9 +221,9 @@ function HeroCourseCard({ course, tag, className = "" }) {
           {course.instructor?.name} · {course.enrollments_count || 0} students
         </div>
         <div className="mt-3 flex items-center justify-between">
-          <span className="text-[12px] tracking-wide text-amber-400">
+          {/* <span className="text-[12px] tracking-wide text-amber-400">
             ★ {(course.rating || 4.8).toFixed?.(1) || course.rating || "4.8"}
-          </span>
+          </span> */}
           <span className="text-[15px] font-bold">
             {hasDiscount ? (
               <>
