@@ -370,7 +370,7 @@ export default function Navbar({ settings, categories }) {
                 href="/blog"
                 className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors py-2"
               >
-                Blog
+                Blogs
               </Link>
 
               {/* <div className="py-2">
@@ -480,7 +480,7 @@ export default function Navbar({ settings, categories }) {
           href="/blog"
           className="text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors relative group"
         >
-          Blog
+          Blogs
           <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
         </Link>
       </div>
