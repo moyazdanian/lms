@@ -67,32 +67,16 @@ class SocialLogin extends Page
                                 ? $state
                                 : $this->record?->google_client_secret),
                         Placeholder::make('google_redirect_uri')
-                            ->label('Authorized redirect URI — copy the matching one into the Google Cloud Console')
+                            ->label('Copy this redirect URI into your Google OAuth Client settings')
                             ->content(function (): HtmlString {
-                                $api = rtrim((string) config('app.url'), '/');
-                                $storefront = rtrim((string) (config('app.frontend_url') ?: $api), '/');
+                                
+                                $storefront = rtrim((string) (config('app.frontend_url')), '/');
 
-                                $code = 'rounded bg-gray-100 px-2 py-1 font-mono text-xs dark:bg-gray-800';
-                                $caption = 'mt-1 text-xs text-gray-500 dark:text-gray-400';
+                                $html = '<div class="flex flex-col gap-1">';
+                                $html .= '<span class="text-sm text-gray-500">'.$storefront.'/auth/callback/google</span>';
+                                $html .= '</div>';
 
-                                // Sign-in always returns to the origin it started
-                                // on, so the URI to register depends on how the
-                                // storefront reaches the API.
-                                $entries = $storefront === $api
-                                    ? [[$api, 'The storefront and the API share this origin.']]
-                                    : [
-                                        [$storefront, 'Storefront on its own domain (the Docker stack: Caddy forwards /auth/* to the API).'],
-                                        [$api, 'Storefront that calls the API on a separate domain, without a proxy in front of /auth.'],
-                                    ];
-
-                                $html = '<div class="space-y-3">';
-
-                                foreach ($entries as [$base, $hint]) {
-                                    $html .= '<div><code class="'.$code.'">'.e($base).'/auth/google/callback</code>'
-                                        .'<p class="'.$caption.'">'.$hint.'</p></div>';
-                                }
-
-                                return new HtmlString($html.'</div>');
+                                return new HtmlString($html);
                             })
                             ->columnSpan(2),
                     ]),
