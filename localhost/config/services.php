@@ -58,6 +58,10 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         // Google requires an absolute redirect URI and it must match the
         // Authorized redirect URI registered in the Google Cloud Console.
+        // SocialAuthController overrides this per request with the origin the
+        // sign-in started on (storefront or API), so the session cookie that
+        // holds the OAuth "state" and the callback always share a host; this
+        // value is the fallback for requests from an unknown origin.
         'redirect' => rtrim((string) env('APP_URL', 'http://localhost'), '/').'/auth/google/callback',
     ],
 

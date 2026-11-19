@@ -200,6 +200,28 @@ it('redirects with provider_disabled when the panel toggle is off', function () 
     expect(str_contains((string) $response->getTargetUrl(), 'error=provider_disabled'))->toBeTrue();
 });
 
+it('returns to the origin the sign-in started on so the oauth state survives', function () {
+    enableGoogle();
+
+    // The Docker stack: the storefront proxies /auth/* to the API, so the
+    // browser starts on the web domain (where the session cookie lives) while
+    // APP_URL is the api. host. The callback must stay on the web domain,
+    // otherwise Google lands on a host without the cookie holding "state".
+    config([
+        'app.url' => 'https://api.example.com',
+        'app.frontend_url' => 'https://www.example.com',
+        'services.frontend.url' => 'https://www.example.com',
+    ]);
+
+    $response = $this->get('https://www.example.com/auth/google/redirect');
+
+    $response->assertRedirect();
+    parse_str((string) parse_url($response->getTargetUrl(), PHP_URL_QUERY), $query);
+
+    expect($query['redirect_uri'] ?? null)
+        ->toBe('https://www.example.com/auth/google/callback');
+});
+
 it('404s unknown providers before touching socialite', function () {
     $this->get('/auth/facebook/redirect')->assertNotFound();
     $this->get('/auth/facebook/callback')->assertNotFound();

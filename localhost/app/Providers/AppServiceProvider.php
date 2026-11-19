@@ -46,6 +46,17 @@ class AppServiceProvider extends ServiceProvider
 
         if (preg_match('#^https?://#i', $rootUrl)) {
             URL::forceRootUrl($rootUrl);
+
+            // forceRootUrl() only pins the host: formatRoot() rewrites the
+            // scheme of that root with the *request's* scheme. A server-side
+            // render fetching this API over the internal network is plain
+            // http, so the favicon/logo URLs came out as
+            // "http://api.../storage/..." and the browser blocked them as
+            // mixed content on the https storefront. The public scheme is
+            // APP_URL's, so it wins over the transport used internally.
+            if (str_starts_with(strtolower($rootUrl), 'https://')) {
+                URL::forceScheme('https');
+            }
         }
 
         // Panel-first storage (S3 credentials, lesson video disk, serving

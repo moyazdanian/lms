@@ -63,7 +63,7 @@ class SocialAuthController extends Controller
             'redirect' => $redirectTo,
         ]);
 
-        $this->applyProviderConfig();
+        $this->applyProviderConfig($request);
 
         return Socialite::driver($provider)->redirect();
     }
@@ -85,7 +85,7 @@ class SocialAuthController extends Controller
         $meta = $request->session()->pull(self::META_KEY, []);
         $intent = ($meta['intent'] ?? null) === 'connect' ? 'connect' : 'login';
 
-        $this->applyProviderConfig();
+        $this->applyProviderConfig($request);
 
         try {
             $oauthUser = Socialite::driver($provider)->user();
@@ -197,7 +197,7 @@ class SocialAuthController extends Controller
      * values already in the config act as the fallback. Works even with a
      * cached config because this is a runtime override per request.
      */
-    protected function applyProviderConfig(): void
+    protected function applyProviderConfig(Request $request): void
     {
         $settings = General_setting::query()->first();
 
@@ -208,6 +208,44 @@ class SocialAuthController extends Controller
         if (filled($settings?->google_client_secret)) {
             config(['services.google.client_secret' => $settings->google_client_secret]);
         }
+
+        // The callback has to live on the origin this request arrived on. The
+        // browser starts the flow there, which is where the session cookie
+        // holding the anti-CSRF "state" belongs, and Google returns the code
+        // to whatever URI we hand it. With the Docker stack the storefront
+        // proxies /auth/* to the API, so the flow starts on the storefront
+        // origin while APP_URL is the api. host: Google used to deliver the
+        // callback to a host without that cookie and Socialite rejected the
+        // state ("Your sign-in attempt expired").
+        config(['services.google.redirect' => $this->redirectUri($request)]);
+    }
+
+    /**
+     * OAuth callback URL for the origin this request arrived on. Only the
+     * app's own public origins are accepted, so a spoofed Host header can
+     * never redirect the authorization code somewhere else.
+     */
+    protected function redirectUri(Request $request): string
+    {
+        $path = '/auth/google/callback';
+        $origin = rtrim($request->getSchemeAndHttpHost(), '/');
+        $host = strtolower($request->getHost());
+
+        $known = [
+            config('app.url'),
+            config('app.frontend_url'),
+            config('services.frontend.url'),
+        ];
+
+        foreach ($known as $base) {
+            if (is_string($base)
+                && $base !== ''
+                && strtolower((string) parse_url($base, PHP_URL_HOST)) === $host) {
+                return $origin.$path;
+            }
+        }
+
+        return rtrim((string) config('services.google.redirect'), '/');
     }
 
     /**
