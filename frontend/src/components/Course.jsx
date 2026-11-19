@@ -140,14 +140,14 @@ export default function Course({ course }) {
         </div>
 
         {/* Price + action */}
-        <div className="mt-auto flex items-end justify-between gap-3 border-t border-white/10 pt-3.5">
-          <div className="leading-tight">
+        <div className="mt-auto flex flex-col gap-3 border-t border-white/10 pt-3.5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0 leading-tight">
             <ShowPrice
               price={course.price}
               discount_price={course.discount_price}
             />
           </div>
-          <div className="w-[96px] shrink-0">
+          <div className="w-full shrink-0 sm:w-[96px]">
             {isFree ? (
               <FreeEnrollButton course={course} />
             ) : (

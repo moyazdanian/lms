@@ -48,7 +48,7 @@ export function BrandMark({ compact = false }) {
       </span>
       {compact ? null : (
         <span className="text-sm font-semibold leading-tight">
-          {settings.site_name}
+          {settings?.settings?.site_name}
         </span>
       )}
     </Link>

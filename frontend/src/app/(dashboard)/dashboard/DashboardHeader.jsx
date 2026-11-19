@@ -1,6 +1,12 @@
 "use client";
 import React, { useState } from "react";
-import { BellIcon, LifeBuoyIcon, LogOutIcon, UserIcon } from "lucide-react";
+import {
+  BellIcon,
+  HomeIcon,
+  LifeBuoyIcon,
+  LogOutIcon,
+  UserIcon,
+} from "lucide-react";
 import { MobileNavigation } from "./MobileNavigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -93,7 +99,15 @@ export function DashboardHeader({ mobileNavOpen, onMobileNavOpenChange }) {
             <React.Fragment key={crumb}>
               {index > 0 ? <BreadcrumbSeparator /> : null}
               <BreadcrumbItem className="min-w-0">
-                {index === trail.length - 1 ? (
+                {index === 0 ? (
+                  <Link
+                    href="/"
+                    aria-label="Home"
+                    className="flex items-center"
+                  >
+                    <HomeIcon aria-hidden="true" className="size-4" />
+                  </Link>
+                ) : index === trail.length - 1 ? (
                   <BreadcrumbPage className="truncate">{crumb}</BreadcrumbPage>
                 ) : (
                   <span className="hidden truncate sm:inline">{crumb}</span>
@@ -155,6 +169,12 @@ export function DashboardHeader({ mobileNavOpen, onMobileNavOpenChange }) {
             <Link href="/dashboard/tickets" className="flex gap-2">
               <LifeBuoyIcon aria-hidden="true" />
               Support
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <Link href="/" className="flex gap-2">
+              <HomeIcon aria-hidden="true" />
+              Go to home page
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
