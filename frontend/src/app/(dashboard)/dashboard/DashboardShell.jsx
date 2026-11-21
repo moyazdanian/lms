@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 import { DashboardSidebar } from "./DashboardSidebar";
 import { DashboardHeader } from "./DashboardHeader";
@@ -16,6 +16,13 @@ export default function DashboardShell({ children }) {
 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isPending && !user) {
+      router.replace("/login");
+    }
+  }, [isPending, user, router]);
 
   if (isPending) {
     return <Loading />;
@@ -28,9 +35,7 @@ export default function DashboardShell({ children }) {
   }
 
   if (!user) {
-    return (
-      <ErrorState message="User not found. Please log in." />
-    );
+    return null;
   }
 
   return (
@@ -40,9 +45,7 @@ export default function DashboardShell({ children }) {
           role={user.role}
           pathname={pathname}
           collapsed={collapsed}
-          onToggleCollapsed={() =>
-            setCollapsed((value) => !value)
-          }
+          onToggleCollapsed={() => setCollapsed((value) => !value)}
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -51,13 +54,8 @@ export default function DashboardShell({ children }) {
             onMobileNavOpenChange={setMobileNavOpen}
           />
 
-          <main
-            id="main"
-            className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8"
-          >
-            <div className="mx-auto w-full max-w-[1400px]">
-              {children}
-            </div>
+          <main id="main" className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
+            <div className="mx-auto w-full max-w-[1400px]">{children}</div>
           </main>
         </div>
       </div>
