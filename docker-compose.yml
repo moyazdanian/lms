@@ -120,7 +120,7 @@ services:
         # Sitemap, robots.txt and canonical links point at the storefront.
         NEXT_PUBLIC_SITE_URL: "https://${WEB_DOMAIN:-localhost}"
         NEXT_PUBLIC_MEDIA_HOSTS: "${NEXT_PUBLIC_MEDIA_HOSTS:-}"
-        NEXT_IMAGE_UNOPTIMIZED: "1"
+        NEXT_IMAGE_UNOPTIMIZED: "0"
     restart: unless-stopped
     ports:
       # Loopback only, like the API: Caddy is what the internet talks to.

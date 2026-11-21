@@ -54,7 +54,6 @@ export function CookieConsent({ consent = {} }) {
     "We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic. By clicking \"Accept All\", you consent to our use of cookies.";
   const acceptLabel = consent?.banner_accept_label || "Accept All";
   const necessaryLabel = consent?.banner_necessary_label || "Necessary Only";
-  const policyLabel = consent?.banner_link_label || "Cookie Policy";
 
   return (
     <div
@@ -93,10 +92,6 @@ export function CookieConsent({ consent = {} }) {
               {" | "}
               <Link href="/terms" className="underline hover:text-amber-500">
                 Terms of Service
-              </Link>
-              {" | "}
-              <Link href="/cookie-policy" className="underline hover:text-amber-500">
-                {policyLabel}
               </Link>
             </p>
           </div>
