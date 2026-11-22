@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Lesson;
 use App\Models\Section;
 use App\Support\MediaDiskResolver;
+use App\Support\StorefrontUrl;
 use App\UploadFileTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -125,7 +126,7 @@ class LessonController extends Controller
         $data = $lesson->toArray();
 
         $data['video_url'] = $lesson->video_url
-            ? route(
+            ? StorefrontUrl::route(
                 ($lesson->is_free || $lesson->preview)
                     ? 'lessons.video.preview'
                     : 'lessons.video',

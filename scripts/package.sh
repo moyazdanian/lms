@@ -171,4 +171,4 @@ printf '  package: %s\n' "$ARCHIVE"
 printf '  files:   %s\n' "$FILE_COUNT"
 printf '  size:    %s\n' "$SIZE"
 printf '\nNext: unpack it into an empty directory and follow documentation/installation.html\n'
-printf 'or documentation/docker.html before uploading.\n'
+printf 'before uploading.\n'

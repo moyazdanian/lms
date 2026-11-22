@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Models\Lesson_progress;
 use App\Models\Review;
+use App\Support\StorefrontUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Auth;
@@ -63,7 +64,7 @@ class CourseResource extends JsonResource
                     ];
                 });
             }),
-            'preview' => $this->preview_video ? route('course.video.preview', ['course' => $this->slug]) : null,
+            'preview' => $this->preview_video ? StorefrontUrl::route('course.video.preview', ['course' => $this->slug]) : null,
 
             'reviews' => $this->whenLoaded('reviews', function () {
                 return $this->reviews->map(function ($review) {
@@ -103,6 +104,6 @@ class CourseResource extends JsonResource
             ? 'lessons.video.preview'
             : 'lessons.video';
 
-        return route($route, ['lesson' => $lesson->id]);
+        return StorefrontUrl::route($route, ['lesson' => $lesson->id]);
     }
 }

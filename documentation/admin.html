@@ -55,7 +55,7 @@
 
       <section class="sec" id="panel">
         <h2>The panel at a glance</h2>
-        <p>The panel is served by the Laravel application at <code>https://api.example.com/admin</code>. It is a Filament application: every table searches, sorts, filters, and offers bulk actions, and every form validates before it saves. Only users with the administrator role can open it.</p>
+        <p>The panel is served by the Laravel application at <code>https://api.example.com/admin</code>. It is a Filament application: tables search, sort and filter on the columns that matter, list screens offer bulk actions where they make sense, and every form validates before it saves. Only users with the administrator role can open it.</p>
 
         <h3>Sidebar map</h3>
         <div class="table-wrap">
@@ -106,7 +106,7 @@
 
         <h3>Conventions that apply everywhere</h3>
         <ul>
-          <li><strong>Secrets are write-only.</strong> Password fields show a blank box on every visit. Saving with the box empty keeps the stored value; typing a new value replaces it. Nothing is ever read back into the browser.</li>
+          <li><strong>Secret fields survive a blank save.</strong> Credentials render masked and can be revealed in place by an administrator; saving a field blank keeps the stored secret. Type a new value only when you mean to replace it, because the old one cannot be recovered afterwards.</li>
           <li><strong>Saved settings take effect immediately.</strong> Gateway, Google, and storage values are read from the database on every request, so there is no deploy and no restart.</li>
           <li><strong>Deletes are permanent.</strong> There is no trash can for most resources. Deleting a course with enrolled students is refused by the API, but the panel's delete action should still be treated as final.</li>
           <li><strong>The audit log records what you do.</strong> Every panel visit and every create, update, or delete is written to the <code>admin_audit</code> log channel with the administrator's identity, IP, URL, and submitted input. Password, token, secret, and key fields are redacted first.</li>
@@ -288,7 +288,7 @@
         <ol class="steps">
           <li>
             <h3>Approve</h3>
-            <p>Reserves the requested amount against the instructor's earnings and notifies them. Nothing is transferred.</p>
+            <p>Confirms the reservation the request already placed against the instructor's earnings and notifies them. Nothing is transferred; the amount stays in the pending total.</p>
           </li>
           <li>
             <h3>Pay out of band</h3>
@@ -296,7 +296,7 @@
           </li>
           <li>
             <h3>Mark Paid</h3>
-            <p>Completes the request, writes it into the ledger and the instructor's history, and notifies them.</p>
+            <p>Completes the request, records the payment date, moves the amount from the instructor's pending total to paid, and notifies them.</p>
           </li>
           <li>
             <h3>Or reject with a reason</h3>
@@ -512,7 +512,7 @@
         </div>
 
         <h3>Payment Gateways</h3>
-        <p>Four gateways, each with its own switch and credential fields. Fill a gateway's fields before switching it on: an enabled gateway is offered at checkout, so an incomplete one fails at the payment step instead of quietly disappearing. The buttons appear in the order Stripe, PayPal, Mollie, Razorpay. Credentials are stored in the database, not in <code>.env</code>, and the secret boxes are write-only — empty on every visit, and saving one blank keeps the stored value.</p>
+        <p>Four gateways, each with its own switch and credential fields. An enabled gateway is offered at checkout, so fill its fields before you switch it on; an incomplete gateway fails at the payment step instead of quietly disappearing. Stripe behaves differently: a saved secret key is what offers it at checkout, and its switch is informational. The buttons appear in the order Stripe, PayPal, Mollie, Razorpay. Credentials are stored in the database, not in <code>.env</code>. Secret fields render masked and can be revealed in place; saving one blank keeps the stored secret.</p>
         <p>Before configuring a gateway, decide the site currency. Checkout charges in the site currency (seeded as USD); a gateway only accepts the currencies enabled on your merchant account.</p>
 
         <h4>Stripe (cards)</h4>
@@ -523,7 +523,7 @@
           </li>
           <li>
             <h3>Paste it into the panel</h3>
-            <p><strong>Settings &rarr; Payment Gateways &rarr; Stripe Secret Key</strong>. Save it, then turn on <strong>Enable Stripe</strong> so the screen reflects the intended state. In this build a stored secret key is what makes Stripe available at checkout, so paste a live key only when you are ready to sell; the field is write-only and leaving it blank keeps the saved key.</p>
+            <p><strong>Settings &rarr; Payment Gateways &rarr; Stripe Secret Key</strong>. Save it. A stored secret key is what makes Stripe available at checkout — the <strong>Enable Stripe</strong> switch is informational — so paste a live key only when you are ready to sell. The field shows the saved key masked, and leaving it blank keeps it.</p>
           </li>
           <li>
             <h3>Create the webhook</h3>

@@ -337,7 +337,7 @@ MAIL_FROM_NAME="My Academy"</code></pre>
 
         <div class="note">
           <span class="note-title">Where other credentials live</span>
-          <p>Payment gateway keys, the Google OAuth client, and S3 credentials are saved in the admin panel (Settings &rarr; Payment Gateways / Social Login / Storage), not in this file. That keeps them changeable without a restart, and secrets are write-only in the panel. See the <a href="admin.html#settings">Admin panel</a> chapter for how to obtain each one.</p>
+          <p>Payment gateway keys, the Google OAuth client, and S3 credentials are saved in the admin panel (Settings &rarr; Payment Gateways / Social Login / Storage), not in this file. That keeps them changeable without a restart, and secret fields stay masked in the panel unless an administrator reveals them. See the <a href="admin.html#settings">Admin panel</a> chapter for how to obtain each one.</p>
         </div>
 
         <div class="warn">
@@ -463,12 +463,12 @@ docker compose logs -f api caddy</code></pre>
         </div>
 
         <h3>Changing the administrator later</h3>
-        <p>Seeding only runs once, so editing <code>.env</code> afterwards changes nothing by itself. To move the account to another address, or to recover a forgotten password, set the new values in <code>.env</code>, recreate the API container, and run the seeder again — it updates that account instead of creating a second one:</p>
+        <p>Seeding only runs once, so editing <code>.env</code> afterwards changes nothing by itself. To recover a forgotten password, keep <code>ADMIN_EMAIL</code> unchanged, set the new password in <code>.env</code>, recreate the API container, and run the seeder again. It updates the account with that address instead of creating a second one:</p>
         <div class="codeblock" data-label="Terminal">
           <pre><code>docker compose up -d api
 docker compose exec api php artisan db:seed --class=AdminSeeder --force</code></pre>
         </div>
-        <p>Use a new <code>ADMIN_EMAIL</code> to add a second administrator; the existing account is left untouched.</p>
+        <p>To add a second administrator, set <code>ADMIN_EMAIL</code> to the new address and <code>ADMIN_PASSWORD</code> to its password, recreate the container, and run the same command. The first account is left untouched. To change an existing administrator's address instead, edit the account under <strong>Users</strong> in the panel.</p>
 
         <div class="note">
           <span class="note-title">If the frontend build is killed with "signal 9"</span>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Support\StorefrontUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -31,7 +32,7 @@ class LessonResource extends JsonResource
                 'original_name' => $attachment->original_name,
                 'size_bytes' => $attachment->size_bytes,
                 'downloads_count' => $attachment->downloads_count,
-                'download_url' => route('lessons.attachments.download', [
+                'download_url' => StorefrontUrl::route('lessons.attachments.download', [
                     'lesson' => $this->id,
                     'attachment' => $attachment->id,
                 ]),
@@ -42,7 +43,7 @@ class LessonResource extends JsonResource
             'title' => $this->title,
             'description' => $this->description,
             'video_url' => $this->video_url
-                ? route(
+                ? StorefrontUrl::route(
                     ($this->is_free || $this->preview)
                         ? 'lessons.video.preview'
                         : 'lessons.video',

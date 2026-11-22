@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Certificate;
+use App\Support\StorefrontUrl;
 use Illuminate\Http\Request;
 
 /**
@@ -98,7 +99,7 @@ class CertificateController extends Controller
             'issued_at' => $certificate->issued_at?->toIso8601String(),
             'revoked_at' => $certificate->revoked_at?->toIso8601String(),
             'verify_url' => rtrim(config('app.frontend_url'), '/')."/certificates/{$certificate->code}",
-            'download_url' => route('certificates.download', ['certificate' => $certificate->code]),
+            'download_url' => StorefrontUrl::route('certificates.download', ['certificate' => $certificate->code]),
         ];
     }
 }

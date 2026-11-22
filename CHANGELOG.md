@@ -15,8 +15,21 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   missing secret is logged with an explicit hint instead of a generic signature
   error. `STRIPE_WEBHOOK_SECRET` still works as a fallback.
 
+### Fixed
+
+- Lesson videos, attachment downloads and certificate PDFs are now linked on the
+  storefront origin instead of the API host. The storefront session cookie only
+  exists on that origin, so a non-preview lesson video used to arrive at the API
+  without a session, redirect to the POST-only `/login` route and fail with 405;
+  free-preview lessons were unaffected, which made it look lesson-specific.
+
 ### Changed
 
+- Rewrote the offline handbook as six Docker-only chapters: product and stack overview,
+  server installation with the complete `.env` and SMTP reference, the student journey,
+  the instructor workspace (course authoring, live edits and payouts), every admin-panel
+  screen and credential setup, and the API. The README now points to the same six
+  chapters and no longer describes a manual installation.
 - Storefront dependencies reviewed with `npm audit`: removed the unused `ai`
   package and the unused direct `@tiptap/*` and `@blocknote/mantine`
   dependencies (BlockNote already brings its own editor stack), updated
@@ -55,9 +68,8 @@ First public release.
   - Sections, lessons, lesson resources, quizzes and certificates.
   - Orders, payments, coupon usage, enrollments and payout requests.
   - Users, instructors, instructor applications and earnings.
-  - Reviews, support tickets and admin notifications.
-  - Blog posts with draft/published state, cover image, author and per-post SEO
-    fields.
+  - Support tickets and admin notifications.
+  - Blog posts with draft/published state, cover image and publish scheduling.
   - Site content management: homepage sections and visibility toggles, footer
     links, legal pages and cookie-banner copy.
   - Settings: general, storage (local or S3-compatible) with a connection test

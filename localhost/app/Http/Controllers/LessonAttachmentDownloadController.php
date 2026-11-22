@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Lesson;
 use App\Models\LessonAttachment;
+use App\Support\StorefrontUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -23,7 +24,7 @@ class LessonAttachmentDownloadController extends Controller
                     'original_name' => $attachment->original_name,
                     'size_bytes' => $attachment->size_bytes,
                     'downloads_count' => $attachment->downloads_count,
-                    'download_url' => route('lessons.attachments.download', [
+                    'download_url' => StorefrontUrl::route('lessons.attachments.download', [
                         'lesson' => $lesson->id,
                         'attachment' => $attachment->id,
                     ]),

@@ -148,7 +148,7 @@
               <tr><td><code>/dashboard/payments</code></td><td>Payment history with search, status, and period filters.</td></tr>
               <tr><td><code>/dashboard/notifications</code></td><td>In-app notifications and mark-as-read actions.</td></tr>
               <tr><td><code>/dashboard/tickets</code>, <code>/dashboard/tickets/{id}</code></td><td>Support tickets and the reply thread.</td></tr>
-              <tr><td><code>/dashboard/profile</code></td><td>Name, email, avatar, password, connected Google account, and data controls.</td></tr>
+              <tr><td><code>/dashboard/profile</code></td><td>Name, email, avatar, password, and the connected Google account.</td></tr>
               <tr><td><code>/dashboard/become-instructor</code></td><td>The teaching application, visible to students only.</td></tr>
               <tr><td><code>/dashboard</code>, <code>/dashboard/teaching</code>, <code>/dashboard/earnings</code></td><td>Instructor workspace — see the next chapter.</td></tr>
             </tbody>
@@ -228,7 +228,7 @@
         </ul>
 
         <h3>Attachments</h3>
-        <p>Instructors attach files to a lesson — slides, exercise files, source code. Attachments carry a size and a title, and are downloaded through an endpoint that checks enrollment first, so the links cannot be shared with people who did not buy the course. Files uploaded on the private disk are streamed by the application; on a bucket they are delivered as short-lived signed URLs.</p>
+        <p>Instructors attach files to a lesson — slides, exercise files, source code. Attachments carry a size and a title, and are downloaded through an endpoint that checks enrollment first, so the links cannot be shared with people who did not buy the course. Files are streamed by the application from whichever disk holds them; a copied URL returns 403 for anyone who is not enrolled.</p>
 
         <h3>Video access</h3>
         <p>Lesson videos are never public. Each request is authorized against the student's enrollment, whether the file is being proxied by the application or handed off to the bucket through a signed URL. A person who guesses a lesson URL without owning the course receives a 403.</p>
@@ -270,7 +270,7 @@
           <li>Every active quiz has been passed at least once.</li>
           <li>Certificates are enabled for the site.</li>
         </ol>
-        <p>The course page shows which of these is still missing. When the instructor marks the course completed, the platform issues certificates to every student who already met the other conditions — the student does not have to open the page again. The certificate is generated as a PDF and stored with everything that must not change later:</p>
+        <p>Once every lesson is complete, the classroom banner states the remaining step: pass the final quiz, or wait for the instructor to mark the course completed. When that happens, the platform issues certificates to every student who already met the other conditions — the student does not have to open the page again. The certificate record stores everything that must not change later, and the PDF is generated when it is downloaded:</p>
         <ul>
           <li>A <strong>serial number</strong> in human-readable form, for example <code>CERT-2026-000123</code>.</li>
           <li>A <strong>verification code</strong>, an unguessable identifier used by the public verification page.</li>
@@ -335,11 +335,10 @@
 
       <section class="sec" id="privacy">
         <h2>Privacy and data control</h2>
-        <p>Two obligations that most marketplaces postpone are built in from the start: consent for cookies, and the right to take your data with you or delete it.</p>
+        <p>Two obligations are built in from the start: consent for cookies, and a privacy policy written for your own business rather than hard-coded in the theme.</p>
         <ul>
           <li><strong>Cookie consent</strong> — a banner appears on the first visit with two choices, accept all or keep only what the site needs. The choice is remembered, the banner copy and button labels are written in the panel under <strong>Content &rarr; Cookie Consent</strong>, and it links to a cookie policy page whose text comes from the same screen.</li>
-          <li><strong>Data export</strong> — a student can download the data the site holds about them from their account settings.</li>
-          <li><strong>Account deletion</strong> — a student can delete their own account and its personal data. Orders and certificates that must remain for financial records are retained, and the deletion is confirmed in the interface before it happens.</li>
+          <li><strong>Data export and deletion</strong> — the REST API exposes <code>GET /api/v1/gdpr/export</code> and <code>DELETE /api/v1/gdpr/account</code>. The dashboard does not yet surface them as buttons, so a data request is handled by support or by calling the API. Deletion requires the account password and is refused for an instructor who still has enrolled students; it permanently removes the account and associated data, so export first.</li>
           <li><strong>No trackers by default</strong> — the installation ships without analytics or advertising scripts, so nothing runs before a visitor has made a choice.</li>
         </ul>
         <p>The terms of service and privacy policy themselves are written in the panel, in a rich-text editor, and rendered at <code>/terms</code> and <code>/privacy-policy</code>. They are not files in the theme, so changing a clause never needs a developer.</p>

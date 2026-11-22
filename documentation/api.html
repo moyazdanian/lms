@@ -55,13 +55,13 @@
 
       <section class="sec" id="basics">
         <h2>Conventions</h2>
-        <p>Everything is served from one versioned prefix, returns JSON, and answers with a message on failure.</p>
+        <p>Business endpoints are served from one versioned prefix, return JSON, and answer with a message on failure. The session routes — sign-in, registration, logout and password resets — sit beside the prefix on the same host, outside <code>/api/v1</code>.</p>
         <div class="table-wrap">
           <table>
             <tbody>
               <tr>
                 <th scope="row">Base URL</th>
-                <td><code>{APP_URL}/api/v1</code></td>
+                <td><code>{APP_URL}/api/v1</code> for everything except the session routes below</td>
               </tr>
               <tr>
                 <th scope="row">Format</th>
@@ -122,7 +122,7 @@
 
       <section class="sec" id="auth">
         <h2>Authentication</h2>
-        <p>The storefront authenticates with a session cookie rather than a token, which is why it can call the API directly from the browser without ever holding a credential.</p>
+        <p>The storefront authenticates with a session cookie rather than a token, which is why it can call the API directly from the browser without ever holding a credential. These routes live on the API host but outside <code>/api/v1</code>: <code>POST /login</code>, <code>/register</code>, <code>/logout</code>, <code>/forgot-password</code>, <code>/reset-password</code>, and the email-verification routes.</p>
         <ol class="steps">
           <li>
             <h3>Ask for the CSRF cookie</h3>
@@ -134,7 +134,7 @@
           <li>
             <h3>Sign in</h3>
             <div class="codeblock" data-label="Request">
-              <pre><code>POST {APP_URL}/api/v1/login
+              <pre><code>POST {APP_URL}/login
 Content-Type: application/json
 X-XSRF-TOKEN: {token from the cookie}
 

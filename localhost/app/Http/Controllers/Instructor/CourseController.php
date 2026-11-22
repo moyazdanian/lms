@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\InstructorEarning;
 use App\Services\CourseApprovalService;
 use App\Support\MediaDiskResolver;
+use App\Support\StorefrontUrl;
 use App\UploadFileTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -439,7 +440,7 @@ class CourseController extends Controller
         $data['revenue'] = (float) ($course->total_revenue ?? 0);
         $data['thumbnail'] = $course->thumbnail ? url('storage/' . $course->thumbnail) : null;
         $data['preview_video'] = $course->preview_video
-            ? route('courses.preview-video', ['course' => $course->id])
+            ? StorefrontUrl::route('courses.preview-video', ['course' => $course->id])
             : null;
         $data['status'] = $course->is_active ? 'published' : 'draft';
         $data['sections'] = $course->relationLoaded('sections')
@@ -450,7 +451,7 @@ class CourseController extends Controller
                         return [
                             ...$lesson->toArray(),
                             'video_url' => $lesson->video_url
-                                ? route(
+                                ? StorefrontUrl::route(
                                     ($lesson->is_free || $lesson->preview)
                                         ? 'lessons.video.preview'
                                         : 'lessons.video',

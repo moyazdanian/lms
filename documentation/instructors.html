@@ -100,7 +100,7 @@
               <tr><th scope="row">Headline statistics</th><td>Seven cards: total revenue, total sales, total students, total courses, paid earnings, pending earnings, and available balance. Revenue, sales, and students carry the percentage change against the previous period.</td></tr>
               <tr><th scope="row">Revenue chart</th><td>Net earnings over the selected period, from the same ledger used by payouts.</td></tr>
               <tr><th scope="row">Sales and enrollment charts</th><td>Sales per day and new enrollments per day, with a cumulative enrollment line that separates a steadily growing course from a new one.</td></tr>
-              <tr><th scope="row">Course performance</th><td>The top five courses by revenue or sales — switch the ordering in the panel header — with sales, students, rating, and revenue.</td></tr>
+              <tr><th scope="row">Course performance</th><td>The top five courses, with a revenue/sales selector in the panel header, and sales, students, rating, and revenue for each.</td></tr>
               <tr><th scope="row">Recent sales</th><td>The latest purchases with student, course, gross amount, your earnings, date, and payment status.</td></tr>
             </tbody>
           </table>
@@ -229,7 +229,7 @@
             </thead>
             <tbody>
               <tr>
-                <td><strong>Sensitive</strong>: title, price, discount price, level, category, thumbnail, preview video</td>
+                <td><strong>Sensitive</strong>: title, price, discount price, level, language, category, thumbnail, preview video</td>
                 <td>Collected into a single pending edit request for the administrator. The course keeps running with its current data until the request is approved. A toast says so explicitly.</td>
               </tr>
               <tr>
@@ -294,15 +294,17 @@
               </tr>
             </thead>
             <tbody>
-              <tr><th scope="row">Gross amount</th><td>What the student paid for that item.</td></tr>
-              <tr><th scope="row">Commission</th><td>The site's percentage at the moment of the sale, stored on the record so later rate changes never rewrite history.</td></tr>
-              <tr><th scope="row">Net amount</th><td>Gross minus commission — what the instructor earned.</td></tr>
-              <tr><th scope="row">Available</th><td>The part of the net amount not already tied to a pending, approved, or paid request.</td></tr>
-              <tr><th scope="row">Status</th><td>available, requested, paid, or reversed.</td></tr>
+              <tr><th scope="row">Catalog price</th><td>The course's list price at the time of the sale.</td></tr>
+              <tr><th scope="row">Gross</th><td>The item's price before any coupon.</td></tr>
+              <tr><th scope="row">Coupon discount</th><td>The part of this item's price covered by a coupon.</td></tr>
+              <tr><th scope="row">Final amount</th><td>What the student actually paid for the item.</td></tr>
+              <tr><th scope="row">Platform fee</th><td>The site's share at the rate stored on the sale, so later commission changes never rewrite history.</td></tr>
+              <tr><th scope="row">Your earnings</th><td>Final amount minus the platform fee — the amount credited to your balance.</td></tr>
+              <tr><th scope="row">Status</th><td>The order's payment status: paid, pending, failed, or canceled. Only a paid line adds to your balance.</td></tr>
             </tbody>
           </table>
         </div>
-        <p>The summary separates <strong>available balance</strong>, <strong>pending balance</strong> (requested or approved, not yet paid), and <strong>paid</strong>. A reversed earning — a refunded order, for example — stays in the ledger rather than being deleted, so the history always explains the current balance. Because earnings are recorded per order item, a multi-course order pays each instructor for exactly their own course.</p>
+        <p>The summary separates <strong>available balance</strong>, <strong>pending balance</strong> (requested or approved, not yet paid), and <strong>paid</strong>. Earnings are never deleted, so the ledger always explains the current balance. Because earnings are recorded per order item, a multi-course order pays each instructor for exactly their own course.</p>
       </section>
 
       <section class="sec" id="payouts">
@@ -351,7 +353,7 @@
 
         <div class="note">
           <span class="note-title">Availability is computed from the ledger</span>
-          <p>Available balance is net earnings minus everything already requested or paid — not a separate wallet. A refund that reverses an earning can therefore lower the available balance after a sale, and an unpaid request always shows in the pending total.</p>
+          <p>Available balance is net earnings minus everything already requested or paid — not a separate wallet. An unpaid request shows in the pending total, and a paid one moves to the paid total.</p>
         </div>
       </section>
 

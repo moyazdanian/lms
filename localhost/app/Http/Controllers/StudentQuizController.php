@@ -9,6 +9,7 @@ use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use App\Services\CertificateService;
 use App\Services\QuizScoringService;
+use App\Support\StorefrontUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -266,7 +267,7 @@ class StudentQuizController extends Controller
             'code' => $certificate->code,
             'serial' => $certificate->serial,
             'verify_url' => rtrim(config('app.frontend_url'), '/')."/certificates/{$certificate->code}",
-            'download_url' => route('certificates.download', ['certificate' => $certificate->code]),
+            'download_url' => StorefrontUrl::route('certificates.download', ['certificate' => $certificate->code]),
             'issued_at' => $certificate->issued_at?->toIso8601String(),
             'revoked_at' => $certificate->revoked_at?->toIso8601String(),
             'is_valid' => $certificate->isValid(),
