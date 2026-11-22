@@ -294,8 +294,9 @@ export default function SectionsAndLessonsSidebar({ lesson }) {
               </div>
             ) : certificateState?.eligible === false && progress >= 100 ? (
               <p className="mt-3 text-sm text-gray-500">
-                All lessons completed — pass the final quiz to receive your
-                certificate.
+                {String(course.status).toLowerCase() === "completed"
+                  ? "All lessons completed — pass the final quiz to receive your certificate."
+                  : "All lessons completed — pass the final quiz and the certificate is issued once the course is marked completed."}
               </p>
             ) : null}
           </div>

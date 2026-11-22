@@ -15,11 +15,11 @@ use Illuminate\Support\Str;
 
 /**
  * Issues course completion certificates. A certificate is granted when the
- * user has an active enrollment, every lesson of the course is completed and
- * every active quiz of the course is passed. Issuance is idempotent while the
- * certificate is valid; after an admin revocation the student may re-qualify
- * and a fresh certificate (new code + serial) is issued, while the revoked
- * record is kept for the audit trail.
+ * course itself is completed, the user has an active enrollment, every lesson
+ * of the course is completed and every active quiz of the course is passed.
+ * Issuance is idempotent while the certificate is valid; after an admin
+ * revocation the student may re-qualify and a fresh certificate (new code +
+ * serial) is issued, while the revoked record is kept for the audit trail.
  */
 class CertificateService
 {
@@ -44,10 +44,47 @@ class CertificateService
     }
 
     /**
+     * Issue the certificate to every student who already met the requirements
+     * when a course is marked completed. Students who finished the lessons and
+     * the quiz while the course was still running could not be issued then
+     * (see isEligible), so this closes the gap the moment the course ends.
+     * checkAndIssue makes the call idempotent — already issued certificates
+     * are returned untouched.
+     */
+    public function issueForCompletedCourse(int $courseId): void
+    {
+        $settings = General_setting::query()->first();
+
+        if ($settings && !$settings->certificates_enabled) {
+            return;
+        }
+
+        Enrollment::query()
+            ->where('course_id', $courseId)
+            ->whereIn('status', ['active', 'completed'])
+            ->select(['id', 'user_id'])
+            ->chunkById(100, function ($enrollments) use ($courseId) {
+                foreach ($enrollments as $enrollment) {
+                    $this->checkAndIssue((int) $enrollment->user_id, $courseId);
+                }
+            });
+    }
+
+    /**
      * Whether the user fulfilled every requirement of the course.
      */
     public function isEligible(int $userId, int $courseId): bool
     {
+        // 0. The course must be over. While it is still ongoing the
+        // instructor can keep adding lessons, so a student sitting at 100%
+        // today has not necessarily seen the whole course — no certificate
+        // until the course itself is marked completed.
+        $course = Course::query()->find($courseId);
+
+        if (!$course || $course->status !== 'completed') {
+            return false;
+        }
+
         // 1. Active or completed enrollment.
         $enrolled = Enrollment::query()
             ->where('user_id', $userId)

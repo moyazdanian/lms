@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Instructor workspace — LMS Documentation</title>
-<meta name="description" content="The instructor side: applying, the sales dashboard, five-step course authoring, the approval workflow, curriculum, quiz builder, earnings, and payouts." />
+<meta name="description" content="The instructor side of the platform: applying from a student account, the dashboard, the seven-step course builder, the approval and edit-request workflow, curriculum, attachments, quizzes, earnings, and payout requests." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Source+Serif+4:opsz,wght@8..60,400..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -19,7 +19,7 @@
     <span class="brand-mark">LMS</span>
     <span class="brand-text">Documentation</span>
   </a>
-  <p class="topbar-meta">v1.0 &middot; October 2026</p>
+  <p class="topbar-meta">v1.0 &middot; November 2026</p>
   <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
 </header>
 
@@ -32,13 +32,11 @@
     </div>
     <ol class="chapters">
       <li><a href="index.html"><span class="num">01</span> Overview</a></li>
-      <li><a href="installation.html"><span class="num">02</span> Installation</a></li>
+      <li><a href="installation.html"><span class="num">02</span> Installation on a server</a></li>
       <li><a href="students.html"><span class="num">03</span> Student experience</a></li>
       <li><a href="instructors.html" class="is-current" aria-current="page"><span class="num">04</span> Instructor workspace</a></li>
       <li><a href="admin.html"><span class="num">05</span> Admin panel</a></li>
       <li><a href="api.html"><span class="num">06</span> API reference</a></li>
-      <li><a href="docker.html"><span class="num">07</span> Docker deployment</a></li>
-      <li><a href="deployment.html"><span class="num">08</span> Deploy to a server</a></li>
     </ol>
     <div class="rail-section" id="onThisPage" hidden>
       <h2 class="rail-heading">On this page</h2>
@@ -51,36 +49,45 @@
       <header class="chapter-open">
         <span class="chapter-num" aria-hidden="true">04</span>
         <h1>Instructor workspace</h1>
-        <p class="chapter-lede">How someone becomes an instructor, how they build and publish a course, and how the money they earn turns into a payout.</p>
-        <p class="chapter-meta">Eight sections. Everything here is behind the instructor role; an administrator controls who gets it and what they may change.</p>
+        <p class="chapter-lede">How a student becomes an instructor, what the teaching dashboard contains, how a course is built and published, and how earnings turn into a payout request.</p>
+        <p class="chapter-meta">Nine sections. Every screen here is behind the instructor role and the instructor-active check; an administrator controls who gets the role and can suspend it without deleting the account.</p>
       </header>
 
       <section class="sec" id="applying">
         <h2>Becoming an instructor</h2>
-        <p>Nobody can publish a course immediately after registering. Teaching is an application, and an administrator decides.</p>
+        <p>Nobody can publish a course immediately after registering. Teaching is an application, and an administrator decides. The whole flow lives at <code>/dashboard/become-instructor</code>.</p>
         <ol class="steps">
           <li>
             <h3>Apply from the dashboard</h3>
-            <p>A student opens <strong>Become an instructor</strong> and fills in three things: a biography, their area of expertise, and any social or portfolio links that back it up. The form states what the site expects, so a serious applicant writes a real pitch rather than one line.</p>
+            <p>A student opens <strong>Account &rarr; Become Instructor</strong> and fills in:</p>
+            <ul>
+              <li><strong>Expertise</strong> — a short label such as "Web Development" or "UI/UX Design", up to 255 characters.</li>
+              <li><strong>Bio</strong> — at least 50 characters; the form validates this before it submits. This is the pitch an administrator reads.</li>
+              <li><strong>Social links (optional)</strong> — website, LinkedIn, X (Twitter), and YouTube. Each must be a valid URL.</li>
+            </ul>
           </li>
           <li>
             <h3>Wait for review</h3>
-            <p>The application sits in <strong>Users &rarr; Instructor Applications</strong> with a pending status, and the applicant sees that their submission is under review. Their account keeps working as a student in the meantime.</p>
+            <p>The page switches to <strong>Application under review</strong> with a pending status. The account keeps working as a student in the meantime. The application appears in the admin panel under <strong>Users &rarr; Instructor Applications</strong>.</p>
           </li>
           <li>
             <h3>Get approved</h3>
-            <p>On approval the account's role becomes instructor and an instructor profile is created with the bio, expertise, and links from the application. Courses can then be created, and the instructor workspace appears in the dashboard.</p>
+            <p>Approval turns the account's role into <code>instructor</code>, creates the public teaching profile from the application, and sends an email plus an in-app notification with a link to <code>/dashboard/teaching</code>. The Teaching and Earnings groups appear in the sidebar; <strong>Become Instructor</strong> disappears.</p>
           </li>
           <li>
             <h3>Handle rejection or a later suspension</h3>
-            <p>A rejection carries an administrator's note, which the applicant can read. An instructor profile can also be set to banned later, which locks the workspace without deleting the account or its courses.</p>
+            <p>A rejection records the administrator's note, which is shown on the application page together with an <strong>Apply Again</strong> button. The student edits the same form and resubmits; the previous note stays in the admin panel for context.</p>
           </li>
         </ol>
+        <div class="note">
+          <span class="note-title">Banned is not deleted</span>
+          <p>An administrator can set an instructor profile to <strong>banned</strong> (workspace locked, existing courses stay public) or <strong>rejected</strong> (sign-in blocked and courses hidden). Neither deletes the account or its courses, and both are reversible from <strong>Users &rarr; All Instructors</strong>.</p>
+        </div>
       </section>
 
       <section class="sec" id="workspace">
-        <h2>The instructor dashboard</h2>
-        <p>The workspace answers one question well: how are my courses doing? Every figure is scoped to the signed-in instructor, never to the whole site.</p>
+        <h2>The teaching dashboard</h2>
+        <p><code>/dashboard</code> answers one question well: how are my courses doing? Every figure is scoped to the signed-in instructor, never to the whole marketplace. The date-range control applies to the cards and the three charts; the course and recent-sale panels show their own latest data.</p>
         <div class="table-wrap">
           <table>
             <thead>
@@ -90,159 +97,194 @@
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <th scope="row">Revenue chart</th>
-                <td>Earnings over time, from the same ledger used for payouts.</td>
-              </tr>
-              <tr>
-                <th scope="row">Sales chart</th>
-                <td>Number and value of sales per period, with a date range filter.</td>
-              </tr>
-              <tr>
-                <th scope="row">Enrollment chart</th>
-                <td>Students joining each course over time, which separates a growing course from a new one.</td>
-              </tr>
-              <tr>
-                <th scope="row">Top performing courses</th>
-                <td>The courses earning the most, so an instructor knows where to spend their time.</td>
-              </tr>
-              <tr>
-                <th scope="row">Recent sales</th>
-                <td>The latest purchases with student, course, amount, and date.</td>
-              </tr>
-              <tr>
-                <th scope="row">Sales history</th>
-                <td>The full list, filterable by course and by date range, with the net amount the instructor actually received after commission.</td>
-              </tr>
+              <tr><th scope="row">Headline statistics</th><td>Seven cards: total revenue, total sales, total students, total courses, paid earnings, pending earnings, and available balance. Revenue, sales, and students carry the percentage change against the previous period.</td></tr>
+              <tr><th scope="row">Revenue chart</th><td>Net earnings over the selected period, from the same ledger used by payouts.</td></tr>
+              <tr><th scope="row">Sales and enrollment charts</th><td>Sales per day and new enrollments per day, with a cumulative enrollment line that separates a steadily growing course from a new one.</td></tr>
+              <tr><th scope="row">Course performance</th><td>The top five courses by revenue or sales — switch the ordering in the panel header — with sales, students, rating, and revenue.</td></tr>
+              <tr><th scope="row">Recent sales</th><td>The latest purchases with student, course, gross amount, your earnings, date, and payment status.</td></tr>
             </tbody>
           </table>
         </div>
-        <p>An <strong>Earnings</strong> area holds the balance and payout history, described further down this chapter, and <strong>Courses</strong> lists everything the instructor has created with its status.</p>
-      </section>
 
-      <section class="sec" id="authoring">
-        <h2>Creating a course</h2>
-        <p>Course creation is a five-step form with a step rail, so an instructor can leave and come back without losing the structure. Each step saves, and the course keeps its draft or pending status until final submission.</p>
-        <ol class="steps">
-          <li>
-            <h3>Basic information</h3>
-            <p>Course title, a short description for cards and search results, the full description, a category, the level (beginner, intermediate, or advanced), and the course status field used when the course is between ongoing and completed.</p>
-          </li>
-          <li>
-            <h3>Details</h3>
-            <p>Learning objectives — what a student will be able to do — the requirements they should already have, and tags that help people find the course. Objectives and requirements are stored as lists, and both are shown on the course page.</p>
-          </li>
-          <li>
-            <h3>Media</h3>
-            <p>A thumbnail and an optional preview video. The preview is the trailer a visitor watches before buying, and the form marks it as the thing that most affects conversion. Thumbnails can be replaced or removed at any time.</p>
-          </li>
-          <li>
-            <h3>Pricing</h3>
-            <p>Price, an optional discount price, and the currency. The step shows the original price, the discount, and the final amount a student pays, so a discount is never accidentally deeper than intended.</p>
-          </li>
-          <li>
-            <h3>Review and submit</h3>
-            <p>A summary of the course — sections and lessons, total runtime, how many lessons are free previews, objectives, requirements — followed by submission. Submitting is what sends the course for approval.</p>
-          </li>
-        </ol>
-        <p>Video uploads report progress and survive a slow connection; a checklist appears while a large file is transferring so the instructor knows the upload is still alive.</p>
-      </section>
-
-      <section class="sec" id="approval">
-        <h2>Approval, rejection, and editing a live course</h2>
-        <p>A course cannot appear in the catalog until an administrator approves it. The status moves through a fixed sequence, and each transition is visible to the instructor.</p>
+        <h3>Every instructor page</h3>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th scope="col">Status</th>
+                <th scope="col">Path</th>
+                <th scope="col">Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>/dashboard</code></td><td>Teaching overview and charts.</td></tr>
+              <tr><td><code>/dashboard/teaching</code></td><td><strong>Teaching Courses</strong>: every course the instructor created, with status, price, sales, students, and actions.</td></tr>
+              <tr><td><code>/dashboard/teaching/create</code></td><td>The course builder, starting from a blank draft.</td></tr>
+              <tr><td><code>/dashboard/teaching/courses/{id}</code></td><td>The same builder in edit mode for an existing course.</td></tr>
+              <tr><td><code>/dashboard/earnings</code></td><td>Earnings summary, available balance, and the chart.</td></tr>
+              <tr><td><code>/dashboard/earnings/sales</code></td><td>Every sale with gross, commission, net, and status; searchable and filterable by course, payment status, and period.</td></tr>
+              <tr><td><code>/dashboard/earnings/payouts</code></td><td>Balance, minimum threshold, payout history, and the request dialog.</td></tr>
+              <tr><td><code>/dashboard/profile</code></td><td>Name, email, avatar, password, and connected Google account.</td></tr>
+              <tr><td><code>/dashboard/courses</code></td><td>Courses the instructor is enrolled in as a student, with progress.</td></tr>
+              <tr><td><code>/dashboard/certificates</code></td><td>Certificates earned as a student.</td></tr>
+              <tr><td><code>/dashboard/payments</code></td><td>Purchase history.</td></tr>
+              <tr><td><code>/dashboard/wishlist</code>, <code>/dashboard/notifications</code>, <code>/dashboard/tickets</code></td><td>The same account tools every student has.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="sec" id="authoring">
+        <h2>Creating a course</h2>
+        <p>Start at <strong>Teaching &rarr; Create Course</strong>. The builder is a seven-step form with a step rail on the left; every step validates as you leave it, the completed steps get a check mark, and you can jump back at any time without losing the draft.</p>
+
+        <h3>Step 1 — Basic Information</h3>
+        <div class="table-wrap">
+          <table>
+            <tbody>
+              <tr><th scope="row">Course title</th><td>At least 8 characters, up to 80. This is the headline in the catalog and the course page.</td></tr>
+              <tr><th scope="row">Short description</th><td>One sentence, up to 160 characters, used on cards and in search results.</td></tr>
+              <tr><th scope="row">Full description</th><td>Rich text with headings, lists, links, and images. It becomes the Overview tab.</td></tr>
+              <tr><th scope="row">Category</th><td>One category, including subcategories shown as "Parent / Child". The list comes from the admin panel.</td></tr>
+              <tr><th scope="row">Level</th><td>Beginner, intermediate, or advanced.</td></tr>
+              <tr><th scope="row">Course status</th><td><strong>Ongoing</strong> while you are still adding lessons; <strong>Completed</strong> when the course is finished. This is the lifecycle that unlocks certificates — students cannot receive one while the course is ongoing, even at 100% progress.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Step 2 — Course Details</h3>
+        <p>Learning objectives (at least one is required), requirements, and tags. Objectives and requirements are lists shown on the course page; tags help discovery. Write objectives as outcomes — "Build a checkout flow with Stripe" rather than "Stripe".</p>
+
+        <h3>Step 3 — Curriculum</h3>
+        <p>Sections and lessons, both reorderable. A course needs at least one section with at least one lesson before it can be submitted, and every new lesson needs a video file.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Lesson field</th>
                 <th scope="col">Meaning</th>
               </tr>
             </thead>
             <tbody>
+              <tr><td>Title</td><td>The label in the outline and the player.</td></tr>
+              <tr><td>Duration</td><td>Minutes. It sets the course's total runtime and the 80% watched threshold that auto-completes a lesson.</td></tr>
+              <tr><td>Video</td><td>Uploaded to the configured media disk. Upload progress is reported per file.</td></tr>
+              <tr><td>Free preview</td><td>Lets a visitor watch this lesson before buying. Use it on the lesson that best demonstrates your teaching.</td></tr>
+              <tr><td>Attachments</td><td>Slides, exercise files, datasets, and source archives — up to 20 files of 50 MB each per lesson (PDF, ZIP, Word, PowerPoint, Excel, plain text). Downloads are authorized per enrolled student, so a copied link does not work for anyone else.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Files upload while the course is saved, one after another. The save panel names the file being transferred and shows a percentage, so a large curriculum does not look frozen.</p>
+
+        <h3>Step 4 — Pricing</h3>
+        <p>Price and an optional discounted price, both in the site currency (USD in the seeded settings). The discounted price is <em>the amount a student pays</em>, not an amount off; it must be lower than the list price. Enter <code>0</code> for a free course. The step shows the final amount before you save.</p>
+
+        <h3>Step 5 — Media</h3>
+        <p>A thumbnail is required. A preview video is optional but is the strongest conversion asset a course page has: it is the trailer visitors can watch without buying. Both can be replaced later, subject to the edit-request rules below.</p>
+
+        <h3>Step 6 — Quiz</h3>
+        <p>One optional end-of-course quiz. Leave it inactive and empty to skip it; see <a href="#quiz-builder">Building the quiz</a>. A course with no quiz issues certificates once every lesson is complete and the course is marked completed.</p>
+
+        <h3>Step 7 — Review &amp; Publish</h3>
+        <p>A summary of the course — sections, lessons, total runtime, free previews, objectives, requirements, and the quiz — plus a list of any step that still blocks submission, each with a <strong>Fix now</strong> link. Then two choices:</p>
+        <ul>
+          <li><strong>Save as Draft</strong> — keeps the course private to you. It does not enter the admin queue and is not for sale.</li>
+          <li><strong>Submit for review</strong> — validates every required step and places the course in <strong>Course Approvals</strong>. You can keep editing while it waits; the public sees nothing until it is approved.</li>
+        </ul>
+
+        <h3>What the course list shows</h3>
+        <p><code>/dashboard/teaching</code> lists your courses in a grid or a table, with search, a status filter (draft, published, ongoing, completed), and sorting by recently updated, highest revenue, or most students. Each card carries two badges: the publication state (<strong>draft</strong> / <strong>published</strong>) and the approval state (<strong>draft</strong>, <strong>pending</strong>, <strong>approved</strong>, <strong>rejected</strong>). The ongoing/completed lifecycle is visible in the editor and can be filtered for in the list.</p>
+        <p>The row menu offers <strong>View</strong> (only for an approved course, and it opens the public page), <strong>Edit</strong>, and <strong>Delete</strong>. A course with enrolled students cannot be deleted; the API refuses and the interface explains that support must be contacted.</p>
+      </section>
+
+      <section class="sec" id="approval">
+        <h2>Approval, rejection, and editing a live course</h2>
+        <p>A course cannot appear in the catalog until an administrator approves it. The approval state is visible on every course card and at the top of the editor.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
               <tr>
-                <th scope="row">Draft</th>
-                <td>Being written. Only the instructor sees it.</td>
+                <th scope="col">State</th>
+                <th scope="col">Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Draft</th><td>Private to the instructor. Not submitted, not reviewed, not visible.</td></tr>
+              <tr><th scope="row">Pending approval</th><td>Submitted and waiting for a decision. Still not for sale.</td></tr>
+              <tr><th scope="row">Approved</th><td>Live in the catalog, subject to the Active switch.</td></tr>
+              <tr><th scope="row">Rejected</th><td>Returned with a reason. Edit the course and submit again.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Approval and rejection both send an email and an in-app notification. A rejection reason stays visible in the editor until the course is resubmitted.</p>
+
+        <h3>Editing after approval</h3>
+        <p>Once a course is live, its public details are protected. The builder stays editable, but what happens on save depends on the field:</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Field group</th>
+                <th scope="col">On save</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Sensitive</strong>: title, price, discount price, level, category, thumbnail, preview video</td>
+                <td>Collected into a single pending edit request for the administrator. The course keeps running with its current data until the request is approved. A toast says so explicitly.</td>
               </tr>
               <tr>
-                <th scope="row">Pending approval</th>
-                <td>Submitted and waiting for a decision. It is still not for sale.</td>
-              </tr>
-              <tr>
-                <th scope="row">Approved</th>
-                <td>Live in the catalog. Students can find and buy it.</td>
-              </tr>
-              <tr>
-                <th scope="row">Rejected</th>
-                <td>Sent back with a reason. The instructor edits and submits again.</td>
+                <td><strong>Everything else</strong>: description, objectives, requirements, tags, curriculum, lessons, attachments, quiz, and the ongoing/completed status</td>
+                <td>Applied immediately. Students see the new description or lesson the next time they open the course.</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <p>Instructors are notified when a course is approved or rejected, and a rejection reason stays visible on the course until it is resubmitted.</p>
-
-        <h3>Changing a course that is already live</h3>
-        <p>Once a course is approved, its public details are protected. Editing sensitive fields — the ones students see and buy on — does not silently change a live course. Instead the proposed values are collected into a single pending edit request, which an administrator reviews in <strong>Courses &rarr; Course Edit Requests</strong>:</p>
+        <p>The editor shows three different banners, and they mean different things:</p>
         <ul>
-          <li>All pending changes appear as one batch, so a review is a single decision rather than a queue of small updates.</li>
-          <li>An edit can be reverted field by field while it waits, and an edit that has been reverted is removed from the batch.</li>
-          <li>The course keeps its approved status and stays on sale while the request is open — students never see a course disappear because of an edit.</li>
-          <li>On approval the proposed values become the live ones; on rejection the reason is recorded and the live values stay untouched.</li>
+          <li><strong>Waiting for admin review</strong> — a course submitted for the first time, or sensitive changes queued on a live course. The course keeps its current data.</li>
+          <li><strong>This course was rejected</strong> — the course itself is not approved; fix it and press <strong>Submit for review</strong>.</li>
+          <li><strong>Your last change request was rejected</strong> — the course is still live with its approved data; edit the fields and save again to create a new request.</li>
         </ul>
+        <p>Reverting a field to its live value removes it from the pending request. Approving the request applies the whole batch at once; rejecting it keeps the live values, records the reason, and deletes any replacement media that was uploaded.</p>
+
+        <div class="note">
+          <span class="note-title">The save button follows the state</span>
+          <p>On a new course the footer offers <strong>Save as Draft</strong> and <strong>Submit for review</strong>. On an existing course the header offers <strong>Save</strong> for the current data, and the final step offers <strong>Save and submit update</strong> (or <strong>Submit for review</strong> when the course is not yet live).</p>
+        </div>
       </section>
 
       <section class="sec" id="curriculum">
         <h2>Curriculum and attachments</h2>
-        <p>The curriculum builder is where a course becomes teaching material. It is organized in two levels, and both are reorderable.</p>
-
-        <h3>Sections and lessons</h3>
-        <p>A section groups lessons under a heading; a lesson holds the video and its metadata. For each lesson the instructor sets:</p>
-        <div class="table-wrap">
-          <table>
-            <tbody>
-              <tr>
-                <th scope="row">Title</th>
-                <td>What the lesson is called in the outline.</td>
-              </tr>
-              <tr>
-                <th scope="row">Duration</th>
-                <td>In minutes — used for the course's total runtime and to decide when watching counts as complete.</td>
-              </tr>
-              <tr>
-                <th scope="row">Video</th>
-                <td>The lesson file. Uploads go to the configured lesson media disk and report progress.</td>
-              </tr>
-              <tr>
-                <th scope="row">Preview</th>
-                <td>Marks the lesson as watchable before purchase, which is the strongest argument a course page can make.</td>
-              </tr>
-              <tr>
-                <th scope="row">Order</th>
-                <td>Position within the section; sections and lessons both drag into the order they should be taught in.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <p>The curriculum builder is the third step of the course form, and it is organized in two levels. Both are reordered with the up and down controls on each row.</p>
+        <ul>
+          <li><strong>Section</strong> — a heading that groups lessons, for example "Getting started". Every section needs a title.</li>
+          <li><strong>Lesson</strong> — the unit a student watches: video, duration, free-preview flag, and attachments.</li>
+        </ul>
+        <p>Editing the curriculum of a live course is not a sensitive change: adding a lesson publishes it immediately to enrolled students. That is intentional while a course is <strong>ongoing</strong>; mark the course <strong>completed</strong> when the curriculum is final, so students know the course will not grow and certificates can be issued.</p>
 
         <h3>Attachments</h3>
-        <p>Any lesson can carry downloadable resources alongside the video: slides, exercise files, datasets, or a link to an external repository. An attachment is either an uploaded file or an external URL, and uploaded files keep their title, type, and size so students know what they are getting. Each attachment records how many times it has been downloaded, and downloads are authorized per student, so a link copied out of the classroom does not work for anyone else.</p>
+        <p>Any lesson can carry downloadable resources alongside the video: slides, exercise files, source code, datasets, or an external link. Uploaded files keep their title, type, and size so students know what they are getting, and each attachment tracks how many times it was downloaded. Downloads go through an endpoint that checks enrollment first; a link copied out of the classroom returns 403 for everyone else.</p>
       </section>
 
       <section class="sec" id="quiz-builder">
         <h2>Building the quiz</h2>
-        <p>The quiz builder sits next to the curriculum for each course. It writes the assessment that unlocks that course's certificate.</p>
+        <p>The quiz step is optional. It writes the assessment that gates the certificate for this course.</p>
         <ul>
-          <li><strong>Settings</strong> — the quiz title, the pass mark as a percentage, and a maximum number of attempts, which can be left unlimited.</li>
-          <li><strong>Questions</strong> — each question has its own text, a point value, and an optional explanation that students see when they review a marked attempt.</li>
-          <li><strong>Options</strong> — two or more answers per question with one or more marked correct, written in the order students should read them.</li>
-          <li><strong>Ordering</strong> — questions and options are both reorderable, so a quiz can be arranged from easy to hard.</li>
+          <li><strong>Activation</strong> — an inactive quiz is invisible to students. A course with an active quiz requires a pass before a certificate is issued.</li>
+          <li><strong>Questions</strong> — each has its own text, a point value, and an optional explanation that students see when they review a marked attempt.</li>
+          <li><strong>Options</strong> — two or more answers per question, with at least one marked correct.</li>
+          <li><strong>Shape</strong> — each question holds between two and six options, a point value, and one or more options marked correct.</li>
         </ul>
-        <p>Grading happens on the server: the student's answers are scored against the stored correct options, the attempt is saved with the answers as submitted, and the result is the percentage that decides whether the certificate is unlocked.</p>
+        <p>Grading happens on the server against the stored correct options. The attempt is saved with the answers as submitted, and the resulting percentage decides whether the certificate requirement is met. The pass mark and attempt limit are supervised by the administrator in <strong>Certificates &rarr; Quizzes</strong>, not by the instructor.</p>
+        <div class="note">
+          <span class="note-title">A failed attempt does not lose progress</span>
+          <p>Lessons stay completed when a quiz attempt fails. The student can retry while attempts remain, and the certificate is issued on the first pass once the course itself is completed.</p>
+        </div>
       </section>
 
       <section class="sec" id="earnings">
         <h2>Earnings</h2>
-        <p>An instructor is paid per sale, not per month, and the ledger is precise about the arithmetic.</p>
+        <p>An instructor is paid per sale, not per month, and the ledger is precise about the arithmetic. <code>/dashboard/earnings</code> shows the summary; <code>/dashboard/earnings/sales</code> shows every line.</p>
         <div class="table-wrap">
           <table>
             <thead>
@@ -252,54 +294,80 @@
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <th scope="row">Gross amount</th>
-                <td>What the student paid for that item.</td>
-              </tr>
-              <tr>
-                <th scope="row">Commission</th>
-                <td>The site's percentage at the moment of the sale, stored on the record so later changes to the rate never rewrite history.</td>
-              </tr>
-              <tr>
-                <th scope="row">Net amount</th>
-                <td>Gross minus commission — what the instructor earned.</td>
-              </tr>
-              <tr>
-                <th scope="row">Available amount</th>
-                <td>How much of that earning is still unrequested. An earning requested in a payout keeps the remainder available.</td>
-              </tr>
-              <tr>
-                <th scope="row">Status</th>
-                <td>Available, requested, paid, or reversed.</td>
-              </tr>
+              <tr><th scope="row">Gross amount</th><td>What the student paid for that item.</td></tr>
+              <tr><th scope="row">Commission</th><td>The site's percentage at the moment of the sale, stored on the record so later rate changes never rewrite history.</td></tr>
+              <tr><th scope="row">Net amount</th><td>Gross minus commission — what the instructor earned.</td></tr>
+              <tr><th scope="row">Available</th><td>The part of the net amount not already tied to a pending, approved, or paid request.</td></tr>
+              <tr><th scope="row">Status</th><td>available, requested, paid, or reversed.</td></tr>
             </tbody>
           </table>
         </div>
-        <p>A reversed earning — a refunded order, for example — is kept in the ledger rather than deleted, so the history always explains the current balance. Because earnings are recorded per order item, a multi-course order pays each instructor for exactly their own course.</p>
+        <p>The summary separates <strong>available balance</strong>, <strong>pending balance</strong> (requested or approved, not yet paid), and <strong>paid</strong>. A reversed earning — a refunded order, for example — stays in the ledger rather than being deleted, so the history always explains the current balance. Because earnings are recorded per order item, a multi-course order pays each instructor for exactly their own course.</p>
       </section>
 
       <section class="sec" id="payouts">
         <h2>Payout requests</h2>
-        <p>Withdrawing earnings is a request, not an automatic transfer. An instructor asks; an administrator pays out of band and marks it paid.</p>
+        <p>Withdrawing earnings is a request, not an automatic transfer. The instructor asks; an administrator pays out of band and marks it paid. The form is at <code>/dashboard/earnings/payouts</code>.</p>
+
+        <h3>Before the request</h3>
+        <ul>
+          <li>The <strong>available balance</strong> must be at or above the site's <strong>minimum payout amount</strong>. Below it, the request button is disabled and the page states the threshold.</li>
+          <li>At least one <strong>payout method</strong> must be configured by the administrator. The methods and their account hints come from <strong>Settings &rarr; Payout Methods</strong>.</li>
+          <li>The amount cannot exceed the available balance; the dialog validates both the minimum and the maximum before it sends anything.</li>
+        </ul>
+
+        <h3>The request dialog</h3>
+        <div class="table-wrap">
+          <table>
+            <tbody>
+              <tr><th scope="row">Amount</th><td>Any value from the minimum up to the available balance. Partial withdrawals are allowed; whatever remains stays available for a later request.</td></tr>
+              <tr><th scope="row">Payment method</th><td>One of the configured methods (bank transfer, PayPal, Wise, or whatever the administrator added).</td></tr>
+              <tr><th scope="row">Payment account</th><td>Where the money should go, with a hint that changes with the selected method — an IBAN, a PayPal email, a Wise account number. Required.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>On submit the request is reserved against the oldest available earnings and appears in the history as <strong>pending</strong>. The available balance drops by the reserved amount; the money is not gone, just allocated.</p>
+
+        <h3>What happens next</h3>
         <ol class="steps">
           <li>
-            <h3>A request is only possible above the minimum</h3>
-            <p>The minimum amount comes from the panel's payout settings. Below it, the form refuses the request and states the threshold.</p>
+            <h3>Review</h3>
+            <p>The request waits in the admin panel under <strong>Payments &rarr; Payout Requests</strong>. The administrator sees the amount, the method, and the account details you entered, together with your total and available earnings.</p>
           </li>
           <li>
-            <h3>Partial amounts are allowed</h3>
-            <p>An instructor does not have to withdraw everything at once. A request can draw part of a single earning, and whatever is left stays available for a later request — so a large sale can be paid out gradually.</p>
+            <h3>Approval</h3>
+            <p>The reservation is confirmed and the request becomes <strong>approved</strong>. It is still not paid.</p>
           </li>
           <li>
-            <h3>A method and its details are chosen</h3>
-            <p>The available methods come from the panel, and each one has its own fields for the account to be paid into, for example a bank transfer or an online wallet. The details are stored with the request so an administrator paying it sees exactly where the money should go.</p>
+            <h3>Payment</h3>
+            <p>The administrator sends the money by the method you chose, then presses <strong>Mark Paid</strong>. The request becomes <strong>paid</strong> and the amount appears in your paid total. The platform itself does not move money.</p>
           </li>
           <li>
-            <h3>The request is reviewed</h3>
-            <p>It waits in <strong>Payments &rarr; Payout Requests</strong>. Approving it reserves the earnings; marking it paid completes the ledger; rejecting it with a reason releases the earnings back to available, so the instructor can request again.</p>
+            <h3>Or rejection</h3>
+            <p>A rejected request carries a reason, which you can read in the history. The reserved amount is released back to your available balance, and you can request again.</p>
           </li>
         </ol>
-        <p>The instructor's earnings area shows the balance, every request with its status, and the reason for any rejection.</p>
+        <p>The history on the same page lists every request with its amount, method, status, date, payment details, and any rejection reason, newest first. It is paged, so a long teaching history does not turn into one endless screen.</p>
+
+        <div class="note">
+          <span class="note-title">Availability is computed from the ledger</span>
+          <p>Available balance is net earnings minus everything already requested or paid — not a separate wallet. A refund that reverses an earning can therefore lower the available balance after a sale, and an unpaid request always shows in the pending total.</p>
+        </div>
+      </section>
+
+      <section class="sec" id="checklist">
+        <h2>A launch checklist for a new instructor</h2>
+        <ol>
+          <li>Fill the teaching profile — bio, expertise, links. It is public at <code>/instructors/{id}</code>.</li>
+          <li>Create the course with a clear title, a one-sentence short description, and a full description that states the outcome.</li>
+          <li>Add at least one section and one lesson with a video; mark one lesson as a free preview.</li>
+          <li>Add a thumbnail and, if possible, a short trailer.</li>
+          <li>Set the price (or zero for free) and check the final amount.</li>
+          <li>Write the quiz if the course needs an assessment; activate it only when every question is correct.</li>
+          <li>Submit for review and respond to any rejection reason.</li>
+          <li>After approval, keep the course <strong>ongoing</strong> while adding lessons; mark it <strong>completed</strong> when the curriculum is final, so students can earn certificates.</li>
+          <li>Configure a payout method expectation with the site owner, then request a withdrawal once the available balance passes the minimum.</li>
+        </ol>
       </section>
     </article>
 
@@ -318,14 +386,12 @@
 
 <footer class="site-foot">
   <div class="foot-inner">
-    <span>LMS platform documentation &middot; v1.0 &middot; October 2026</span>
+    <span>LMS platform documentation &middot; v1.0 &middot; November 2026</span>
     <a href="index.html">Overview</a>
     <a href="installation.html">Installation</a>
     <a href="students.html">Students</a>
     <a href="admin.html">Admin</a>
     <a href="api.html">API</a>
-    <a href="docker.html">Docker</a>
-    <a href="deployment.html">Deploy</a>
   </div>
 </footer>
 

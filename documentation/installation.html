@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Installation — LMS Documentation</title>
-<meta name="description" content="Server requirements, backend and storefront setup, environment reference, media storage, first-run settings, and troubleshooting for the LMS platform." />
+<title>Installation on a server — LMS Documentation</title>
+<meta name="description" content="The supported deployment: Docker Compose on a Linux server. Server requirements, DNS, the complete .env reference, SMTP email, first boot, HTTPS, updates, backups, and troubleshooting." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Source+Serif+4:opsz,wght@8..60,400..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -19,14 +19,9 @@
     <span class="brand-mark">LMS</span>
     <span class="brand-text">Documentation</span>
   </a>
-  <p class="topbar-meta">v1.0 &middot; October 2026</p>
+  <p class="topbar-meta">v1.0 &middot; November 2026</p>
   <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
 </header>
-
-      <div class="note">
-        <span class="note-title">Prefer one command?</span>
-        <p>The whole stack also runs in containers: see <a href="docker.html">Docker deployment</a>. Everything below is still the right path when your host has no Docker.</p>
-      </div>
 
 <div class="shell">
   <nav class="rail" id="rail" aria-label="Documentation contents">
@@ -37,13 +32,11 @@
     </div>
     <ol class="chapters">
       <li><a href="index.html"><span class="num">01</span> Overview</a></li>
-      <li><a href="installation.html" class="is-current" aria-current="page"><span class="num">02</span> Installation</a></li>
+      <li><a href="installation.html" class="is-current" aria-current="page"><span class="num">02</span> Installation on a server</a></li>
       <li><a href="students.html"><span class="num">03</span> Student experience</a></li>
       <li><a href="instructors.html"><span class="num">04</span> Instructor workspace</a></li>
       <li><a href="admin.html"><span class="num">05</span> Admin panel</a></li>
       <li><a href="api.html"><span class="num">06</span> API reference</a></li>
-      <li><a href="docker.html"><span class="num">07</span> Docker deployment</a></li>
-      <li><a href="deployment.html"><span class="num">08</span> Deploy to a server</a></li>
     </ol>
     <div class="rail-section" id="onThisPage" hidden>
       <h2 class="rail-heading">On this page</h2>
@@ -55,414 +48,566 @@
     <article class="chapter">
       <header class="chapter-open">
         <span class="chapter-num" aria-hidden="true">02</span>
-        <h1>Installation</h1>
-        <p class="chapter-lede">Get both applications running locally, then turn the site into your own: name, logo, gateways, storage, and the texts your visitors read before they buy.</p>
-        <p class="chapter-meta">Eight sections. The fastest path is to follow the two install lists in order; the environment and media sections explain the values you are pasting in.</p>
+        <h1>Installation on a server</h1>
+        <p class="chapter-lede">The supported deployment is Docker Compose on a Linux server: four containers — MySQL, the Laravel API with the admin panel, the Next.js storefront, and Caddy for HTTPS — started with one command. No PHP, Node, Composer, MySQL, nginx, or certificate tool is installed on the host.</p>
+        <p class="chapter-meta">Ten sections, in the order you need them. The <code>.env</code> and SMTP sections are the two to read carefully; everything else is copy-and-paste.</p>
       </header>
 
-      <section class="sec" id="requirements">
+      <section class="sec" id="before">
         <h2>What you need</h2>
-        <p>Both applications can run on a single small server. Nothing here needs Redis, a message queue service, or a CDN.</p>
+        <p>One Linux server, one domain you control, and nothing else. The stack in this chapter is the only installation path this manual documents.</p>
         <div class="table-wrap">
           <table>
+            <caption>Minimum for a real course site</caption>
             <thead>
               <tr>
-                <th scope="col">Requirement</th>
+                <th scope="col">Item</th>
                 <th scope="col">Details</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <th scope="row">PHP 8.2+</th>
-                <td>With the standard Laravel extensions: <code>ctype</code>, <code>curl</code>, <code>dom</code>, <code>fileinfo</code>, <code>filter</code>, <code>hash</code>, <code>mbstring</code>, <code>openssl</code>, <code>pdo</code>, <code>session</code>, <code>tokenizer</code>, <code>xml</code>. Add <code>gd</code> if certificates should embed images.</td>
+                <th scope="row">Server</th>
+                <td>Ubuntu 22.04 or 24.04 LTS (any Linux with Docker works). 2 vCPU and 2&nbsp;GB RAM minimum; 4&nbsp;GB makes the first build comfortable. Root or a sudo-capable SSH user.</td>
               </tr>
               <tr>
-                <th scope="row">Composer 2</th>
-                <td>For the backend dependencies.</td>
+                <th scope="row">Disk</th>
+                <td>40&nbsp;GB minimum. Lesson videos are the real cost — if they will be large, use an S3-compatible bucket instead (Admin &rarr; Settings &rarr; Storage).</td>
               </tr>
               <tr>
-                <th scope="row">Node.js 18.18+</th>
-                <td>Node 20 or 22 LTS recommended. The storefront is built with <code>npm</code>.</td>
+                <th scope="row">Domain</th>
+                <td>One domain with the ability to add <code>A</code> records. Two hostnames are used: the storefront and the API.</td>
               </tr>
               <tr>
-                <th scope="row">Database</th>
-                <td>MySQL 8 or MariaDB 10.4+ (required). The Docker stack starts its own MySQL; on a manual install, run one yourself and create an empty database.</td>
+                <th scope="row">Ports</th>
+                <td>80 and 443 open on the server, answered by the Caddy container. The application containers stay on loopback ports behind it.</td>
               </tr>
               <tr>
-                <th scope="row">Web server</th>
-                <td>Anything that serves PHP, with the document root pointing at the Laravel <code>public/</code> directory. <code>php artisan serve</code> is enough while developing.</td>
-              </tr>
-              <tr>
-                <th scope="row">Disk space</th>
-                <td>Roughly 500 MB for code and dependencies, plus whatever your video library needs. Moving media to a bucket keeps the server small.</td>
+                <th scope="row">Docker</th>
+                <td>Docker Engine 24+ with the Compose v2 plugin. The install commands below set both up.</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <h3>Optional services</h3>
-        <p>Each of these unlocks a feature and can be added later, one at a time:</p>
-        <ul>
-          <li><strong>Payment gateway accounts</strong> — Stripe, PayPal, Mollie, or Razorpay. Without one, only free and fully discounted courses can be taken.</li>
-          <li><strong>SMTP credentials</strong> — email verification, password resets, and instructor notifications. Without them, mail is written to <code>storage/logs/laravel.log</code>.</li>
-          <li><strong>An S3-compatible bucket</strong> — AWS S3, Cloudflare R2, MinIO, DigitalOcean Spaces, or Wasabi, for lesson videos and attachments.</li>
-          <li><strong>Google OAuth client</strong> — the "continue with Google" button on the sign-in page.</li>
-        </ul>
+        <h3>What runs where</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Service</th>
+                <th scope="col">Built from</th>
+                <th scope="col">Runs</th>
+                <th scope="col">Published</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row"><code>mysql</code></th>
+                <td><code>mysql:8.4.11</code> (pinned patch release)</td>
+                <td>The application database, utf8mb4. Data lives on the <code>lms-mysql</code> volume.</td>
+                <td>not published</td>
+              </tr>
+              <tr>
+                <th scope="row"><code>api</code></th>
+                <td><code>localhost/Dockerfile</code></td>
+                <td>nginx + php-fpm + a supervised queue worker, PHP 8.4 with pdo_mysql, GD, intl, and zip. Serves the API, <code>/admin</code>, and <code>/storage</code>, and delivers queued mail and notifications.</td>
+                <td><code>127.0.0.1:8080</code></td>
+              </tr>
+              <tr>
+                <th scope="row"><code>web</code></th>
+                <td><code>frontend/Dockerfile</code></td>
+                <td>Node 22 running the Next.js standalone server.</td>
+                <td><code>127.0.0.1:3000</code></td>
+              </tr>
+              <tr>
+                <th scope="row"><code>caddy</code></th>
+                <td><code>caddy:2-alpine</code></td>
+                <td>Terminates TLS for both domains, redirects HTTP to HTTPS, serves the storefront, and forwards <code>/api</code>, <code>/sanctum</code>, the login/register posts and <code>/auth/*</code> callbacks on the storefront host to the API container.</td>
+                <td><code>80</code>, <code>443</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note">
+          <span class="note-title">Why two hostnames</span>
+          <p>The storefront is a Node server and the API (with the admin panel) is nginx + PHP. They also use overlapping paths — the admin panel loads its assets from <code>/css</code> and <code>/js</code>, which would collide with the storefront on one hostname. Two hostnames, one certificate each, no path juggling:</p>
+          <ul>
+            <li><code>example.com</code> &rarr; the storefront</li>
+            <li><code>api.example.com</code> &rarr; the API, <code>/admin</code>, <code>/storage</code>, webhooks</li>
+          </ul>
+          <p>The browser talks to the storefront origin for <code>/api</code> and <code>/sanctum</code>, which keeps Sanctum's session and CSRF cookies first-party. Uploaded files, the admin panel, and payment webhooks go straight to the API host. Server-side rendering inside the Docker network uses the private service name, so no request loops back through the proxy.</p>
+        </div>
       </section>
 
-      <section class="sec" id="backend">
-        <h2>Install the backend</h2>
-        <p>Run everything below from inside the <code>localhost/</code> folder — that folder is the Laravel application root.</p>
+      <section class="sec" id="dns">
+        <h2>Point the domain at the server</h2>
+        <p>At your DNS provider, create these records with the server's public IPv4 address (add <code>AAAA</code> records if you have IPv6):</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Type</th>
+                <th scope="col">Name</th>
+                <th scope="col">Value</th>
+                <th scope="col">Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>A</td><td><code>@</code></td><td>203.0.113.10</td><td>The storefront at <code>https://example.com</code>. Use <code>www</code> instead if that is the address visitors should type — pick one.</td></tr>
+              <tr><td>A</td><td><code>api</code></td><td>203.0.113.10</td><td>The API and admin panel at <code>https://api.example.com</code>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Verify before touching the server — certificate issuance fails while DNS is still propagating:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>dig +short example.com
+dig +short api.example.com</code></pre>
+        </div>
+        <p>Both commands must print the server's IP. Propagation is usually minutes, occasionally a few hours.</p>
+      </section>
 
+      <section class="sec" id="docker">
+        <h2>Install Docker and open two ports</h2>
         <ol class="steps">
           <li>
-            <h3>Install the PHP dependencies</h3>
+            <h3>Install Docker Engine and Compose</h3>
             <div class="codeblock" data-label="Terminal">
-              <pre><code>cd localhost
-composer install</code></pre>
+              <pre><code>sudo apt update &amp;&amp; sudo apt upgrade -y
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker "$USER"</code></pre>
             </div>
-            <p>Add <code>--no-dev --optimize-autoloader</code> on a production server.</p>
+            <p>Log out and back in so the group applies, then check that both commands answer:</p>
+            <div class="codeblock" data-label="Terminal">
+              <pre><code>docker version
+docker compose version</code></pre>
+            </div>
           </li>
 
           <li>
-            <h3>Create the environment file</h3>
+            <h3>Open only the ports you need</h3>
             <div class="codeblock" data-label="Terminal">
-              <pre><code>cp .env.example .env
-php artisan key:generate</code></pre>
+              <pre><code>sudo ufw allow OpenSSH
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable</code></pre>
             </div>
-            <p>The next two sections explain which values to change: the database now, everything else as you need it.</p>
-          </li>
-
-          <li>
-            <h3>Point it at your database</h3>
-            <p>Create an empty database and a user that can write to it, then set the database block in <code>.env</code>:</p>
-            <div class="codeblock" data-label=".env">
-              <pre><code>DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=lms
-DB_USERNAME=lms_user
-DB_PASSWORD=</code></pre>
-            </div>
-            <p>Leave <code>QUEUE_CONNECTION</code>, <code>CACHE_STORE</code>, and <code>SESSION_DRIVER</code> as they are — all three use the database and need no extra service.</p>
-          </li>
-
-          <li>
-            <h3>Create the tables and seed the starting content</h3>
-            <div class="codeblock" data-label="Terminal">
-              <pre><code>php artisan migrate --seed</code></pre>
-            </div>
-            <p>The seeders create the homepage content blocks, the feature list shown on the landing page, and one administrator account.</p>
             <div class="warn">
-              <span class="note-title">Choose the administrator credentials before seeding</span>
-              <p>The account comes from <code>ADMIN_EMAIL</code> and <code>ADMIN_PASSWORD</code> in <code>.env</code>, and both are required: the seeder throws an error instead of inventing a password or falling back to a shipped account. No installation shares credentials with another.</p>
-            </div>
-          </li>
-
-          <li>
-            <h3>Link the public storage directory</h3>
-            <div class="codeblock" data-label="Terminal">
-              <pre><code>php artisan storage:link</code></pre>
-            </div>
-            <p>This makes files on the public disk — the logo and favicon you upload in the panel — reachable from the browser.</p>
-          </li>
-
-          <li>
-            <h3>Start it and sign in</h3>
-            <div class="codeblock" data-label="Terminal">
-              <pre><code>php artisan serve</code></pre>
-            </div>
-            <p>The API answers on <code>http://localhost:8000/api/v1</code> and the admin panel on <code>http://localhost:8000/admin</code>. Sign in with the administrator account you seeded.</p>
-            <p>Keep a queue worker running whenever queued mail and notifications matter, in a second terminal during development:</p>
-            <div class="codeblock" data-label="Terminal">
-              <pre><code>php artisan queue:work</code></pre>
+              <span class="note-title">Nothing else may own port 80 or 443</span>
+              <p>Caddy inside the stack publishes those two ports, and Docker writes its own firewall rules for them, so <code>ufw deny 8080</code> does <em>not</em> hide a published port. The API and storefront ports are already bound to <code>127.0.0.1</code> and are never public. If Apache, nginx, or a hosting panel already listens on 80/443, stop it first — <code>sudo ss -ltnp | grep -E ':80|:443'</code> shows which process owns them.</p>
             </div>
           </li>
         </ol>
       </section>
 
-      <section class="sec" id="env-reference">
-        <h2>Environment reference</h2>
-        <p>Every value below lives in <code>localhost/.env</code>. The ones marked as required for the storefront are what make cookie login work; getting them wrong shows up as a 419 error on the sign-in page.</p>
+      <section class="sec" id="upload">
+        <h2>Put the project on the server</h2>
+        <p>Upload the download (scp, rsync, or the host's file manager) into <code>/opt/lms</code>. The folder that contains <code>docker-compose.yml</code> is the one you work from for every command in this chapter.</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>sudo mkdir -p /opt/lms
+sudo chown "$USER":"$USER" /opt/lms
+# upload the download into /opt/lms, then:
+cd /opt/lms
+ls docker-compose.yml .env.docker.example localhost frontend</code></pre>
+        </div>
+        <p>The three things that must be there: <code>docker-compose.yml</code>, the <code>localhost/</code> folder (Laravel), and the <code>frontend/</code> folder (Next.js). Images are built from those folders on the server.</p>
+      </section>
+
+      <section class="sec" id="env">
+        <h2>The .env file</h2>
+        <p>Docker Compose reads <code>.env</code> from the folder that holds <code>docker-compose.yml</code> — not the Laravel <code>.env</code> you may have seen in other PHP projects. This is the only application configuration file you edit; the Caddyfile is touched only if you want certificate-expiry email.</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>cd /opt/lms
+cp .env.docker.example .env
+nano .env</code></pre>
+        </div>
+
+        <h3>Minimum to fill in before the first start</h3>
+        <div class="codeblock" data-label=".env">
+          <pre><code>APP_NAME=My Academy
+
+WEB_DOMAIN=example.com
+API_DOMAIN=api.example.com
+
+ADMIN_EMAIL=owner@example.com
+ADMIN_PASSWORD=a-long-unique-password
+
+DB_DATABASE=lms
+DB_USERNAME=lms
+DB_PASSWORD=a-long-random-database-password
+DB_ROOT_PASSWORD=another-long-random-password
+
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.yourprovider.com
+MAIL_PORT=587
+MAIL_SCHEME=smtp
+MAIL_USERNAME=postmaster@example.com
+MAIL_PASSWORD=your-smtp-password
+MAIL_FROM_ADDRESS=no-reply@example.com
+MAIL_FROM_NAME="My Academy"</code></pre>
+        </div>
+
+        <h3>Every key</h3>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
                 <th scope="col">Key</th>
+                <th scope="col">Required</th>
                 <th scope="col">What it does</th>
-                <th scope="col">Local development</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <th scope="row"><code>APP_URL</code></th>
-                <td>The backend's own address. Used for OAuth callbacks, webhook URLs, and certificate links.</td>
-                <td><code>http://localhost:8000</code></td>
+                <th scope="row"><code>APP_NAME</code></th>
+                <td>no</td>
+                <td>Fallback application name used by the API and mail templates. The name visitors see in the storefront, page titles, and certificates comes from Admin &rarr; General Settings.</td>
               </tr>
               <tr>
-                <th scope="row"><code>FRONTEND_URL</code></th>
-                <td>Where the browser is sent back to after Google sign-in.</td>
-                <td><code>http://localhost:3000</code></td>
+                <th scope="row"><code>WEB_DOMAIN</code></th>
+                <td>yes</td>
+                <td>The storefront host — the address visitors type. Its certificate, the browser's API origin, CORS and Sanctum settings all follow from it. The <code>web</code> image must be rebuilt after a change.</td>
               </tr>
               <tr>
-                <th scope="row"><code>SANCTUM_STATEFUL_DOMAINS</code></th>
-                <td>Hosts allowed to log in with the session cookie. Must contain the exact host and port of the storefront, or sign-in silently fails.</td>
-                <td><code>localhost,localhost:3000,127.0.0.1:3000</code></td>
+                <th scope="row"><code>API_DOMAIN</code></th>
+                <td>yes</td>
+                <td>The API and admin-panel host: <code>/admin</code>, <code>/storage</code>, Google callbacks, and payment webhooks. Gets its own certificate.</td>
               </tr>
               <tr>
-                <th scope="row"><code>CORS_ALLOWED_ORIGINS</code></th>
-                <td>Origins allowed to call the API from the browser. Must match the storefront origin.</td>
-                <td><code>http://localhost:3000</code></td>
+                <th scope="row"><code>API_PORT</code></th>
+                <td>no</td>
+                <td>Loopback debugging port for the backend, default <code>8080</code>. Not reachable from outside the server.</td>
               </tr>
               <tr>
-                <th scope="row"><code>SESSION_DOMAIN</code></th>
-                <td>Cookie scope. Leave as <code>null</code> when the two apps run on different ports; use <code>.example.com</code> when they share a domain.</td>
-                <td><code>null</code></td>
+                <th scope="row"><code>WEB_PORT</code></th>
+                <td>no</td>
+                <td>Loopback debugging port for the storefront, default <code>3000</code>.</td>
               </tr>
               <tr>
-                <th scope="row"><code>SESSION_SECURE_COOKIE</code></th>
-                <td>Send the session cookie over HTTPS only. Turn on in production.</td>
-                <td><code>false</code></td>
+                <th scope="row"><code>ADMIN_EMAIL</code></th>
+                <td>yes</td>
+                <td>The first administrator, created on the first boot only. Must be an address you can receive mail at, since password resets go there. The stack refuses to start while it is empty.</td>
               </tr>
               <tr>
-                <th scope="row"><code>LESSON_VIDEO_DISK</code></th>
-                <td>Where lesson videos and previews are stored: <code>private</code> (local), <code>public</code>, <code>videos</code>, or <code>s3</code>.</td>
-                <td><code>private</code></td>
+                <th scope="row"><code>ADMIN_PASSWORD</code></th>
+                <td>yes</td>
+                <td>Your password for <code>/admin</code>. Nothing is generated and no account is shipped, so an empty value stops the boot with an explanation. Used only while the database is still empty.</td>
               </tr>
               <tr>
-                <th scope="row"><code>LESSON_ATTACHMENT_DISK</code></th>
-                <td>Downloads attached to lessons. Optional — falls back to the video disk.</td>
-                <td>unset (shares video disk)</td>
+                <th scope="row"><code>DB_DATABASE</code>, <code>DB_USERNAME</code>, <code>DB_PASSWORD</code>, <code>DB_ROOT_PASSWORD</code></th>
+                <td>yes in practice</td>
+                <td>Used when MySQL initialises its volume. Change them before the first start; changing them later needs matching changes inside the database.</td>
               </tr>
               <tr>
-                <th scope="row"><code>VIDEO_SERVING_MODE</code></th>
-                <td><code>proxy</code> streams bytes through PHP; <code>signed</code> redirects the browser to a time-limited bucket URL.</td>
-                <td><code>proxy</code></td>
-              </tr>
-              <tr>
-                <th scope="row"><code>AWS_*</code></th>
-                <td>Key, secret, region, bucket, and optional endpoint for an S3-compatible bucket. Required when the video disk is <code>s3</code>.</td>
-                <td>empty</td>
-              </tr>
-              <tr>
-                <th scope="row"><code>STRIPE_*</code></th>
-                <td>Optional fallback for the Stripe secret key and webhook signing secret. Every gateway credential — including the Stripe signing secret — is normally saved in the admin panel, which takes priority over these values. PayPal, Mollie, and Razorpay credentials exist only in the panel.</td>
-                <td>empty</td>
-              </tr>
-              <tr>
-                <th scope="row"><code>GOOGLE_CLIENT_ID</code> / <code>GOOGLE_CLIENT_SECRET</code></th>
-                <td>Fallback for Google sign-in. Values saved in the panel take priority.</td>
-                <td>empty</td>
+                <th scope="row"><code>APP_KEY</code></th>
+                <td>no</td>
+                <td>Leave empty: the first boot generates one and stores it on the storage volume. Set it only to reuse an existing key.</td>
               </tr>
               <tr>
                 <th scope="row"><code>MAIL_*</code></th>
-                <td>Mail transport and sender address.</td>
-                <td><code>log</code> (writes to the log instead of sending)</td>
+                <td>yes for real mail</td>
+                <td>SMTP transport and sender. <code>MAIL_MAILER=log</code> writes messages to the container log instead. See <a href="#smtp">Email (SMTP)</a>.</td>
+              </tr>
+              <tr>
+                <th scope="row"><code>NEXT_PUBLIC_MEDIA_HOSTS</code></th>
+                <td>no</td>
+                <td>Comma-separated extra hosts for images that come from a bucket or CDN, for example <code>my-bucket.s3.eu-west-1.amazonaws.com</code>. Leave empty when the backend serves uploads.</td>
               </tr>
             </tbody>
           </table>
         </div>
+
         <div class="note">
-          <span class="note-title">After editing .env</span>
-          <p>Laravel caches configuration. When a change does not seem to take effect, run <code>php artisan optimize:clear</code> and reload.</p>
+          <span class="note-title">Keys that are set for you</span>
+          <p><code>APP_ENV</code>, <code>APP_DEBUG</code>, <code>DB_HOST</code>, <code>DB_PORT</code>, <code>TRUSTED_PROXIES</code>, <code>FILESYSTEM_DISK</code>, <code>LESSON_VIDEO_DISK</code>, and <code>VIDEO_SERVING_MODE</code> are written by <code>docker-compose.yml</code>, not read from this file. Video storage and delivery are changed in <strong>Admin &rarr; Settings &rarr; Storage</strong>. Payment, Google, and S3 credentials also live in the panel; see <a href="admin.html#settings">Admin panel &rarr; Settings</a>.</p>
+          <p>Do not copy <code>localhost/.env.example</code> or <code>frontend/.env.example</code> into the stack. The containers receive their values from Compose, and the API image deliberately removes any Laravel <code>.env</code> it finds.</p>
+        </div>
+
+        <div class="warn">
+          <span class="note-title">Bare hostnames</span>
+          <p><code>WEB_DOMAIN</code> and <code>API_DOMAIN</code> are hostnames only: <code>example.com</code>, not <code>https://example.com</code>, not <code>example.com/</code>, and not <code>example.com:443</code>. Caddy builds the <code>https://</code> origins from them, and a stray scheme or slash becomes a certificate request for a name that does not exist.</p>
+        </div>
+
+        <div class="note">
+          <span class="note-title">Values the stack derives for you</span>
+          <p><code>APP_URL</code>, <code>FRONTEND_URL</code>, <code>SANCTUM_STATEFUL_DOMAINS</code>, <code>CORS_ALLOWED_ORIGINS</code>, and both <code>NEXT_PUBLIC_*</code> build arguments are computed from the two domains inside <code>docker-compose.yml</code>, so they cannot fall out of step. Change the domains, not those derived keys.</p>
+          <p><code>NEXT_PUBLIC_*</code> values are compiled into the browser bundle. After changing a domain, rebuild: <code>docker compose up -d --build web</code>.</p>
+        </div>
+
+        <div class="note">
+          <span class="note-title">Where other credentials live</span>
+          <p>Payment gateway keys, the Google OAuth client, and S3 credentials are saved in the admin panel (Settings &rarr; Payment Gateways / Social Login / Storage), not in this file. That keeps them changeable without a restart, and secrets are write-only in the panel. See the <a href="admin.html#settings">Admin panel</a> chapter for how to obtain each one.</p>
+        </div>
+
+        <div class="warn">
+          <span class="note-title">Generate strong secrets</span>
+          <p>Use a password manager, or generate values on the server with <code>openssl rand -base64 32</code>. Quote values that contain spaces, <code>#</code>, <code>$</code>, or <code>!</code> — Compose interpolates <code>$</code> inside unquoted values.</p>
         </div>
       </section>
 
-      <section class="sec" id="media">
-        <h2>Where lesson media lives</h2>
-        <p>Videos and attachments are stored on a disk that is not publicly reachable, and delivered only to people who are allowed to watch them. Two decisions control that.</p>
+      <section class="sec" id="smtp">
+        <h2>Email (SMTP)</h2>
+        <p>The platform sends verification links, password resets, course approval notices, payout decisions, and instructor application results by email. Out of the box <code>MAIL_MAILER=log</code>, which writes each message to the API container log and sends nothing — fine for a smoke test, never for a live site.</p>
 
-        <h3>The disk</h3>
-        <p><code>private</code> keeps files on the server under the private storage directory, which is the simplest setup and costs nothing. Switching <code>LESSON_VIDEO_DISK</code> to <code>s3</code> moves new uploads to a bucket — any S3-compatible provider works, and the endpoints for R2, MinIO, and Spaces are listed in <code>.env.example</code>.</p>
-        <div class="warn">
-          <span class="note-title">The bucket must stay private</span>
-          <p>Do not mark the bucket public or give it a public base URL: lesson videos would then be downloadable by anyone who guesses a path. The application either streams the bytes itself or issues a short-lived signed URL.</p>
-        </div>
-
-        <h3>How video reaches the browser</h3>
+        <h3>The eight variables that matter</h3>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th scope="col">Mode</th>
-                <th scope="col">Behaviour</th>
-                <th scope="col">When to use it</th>
+                <th scope="col">Key</th>
+                <th scope="col">Value</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <th scope="row"><code>proxy</code></th>
-                <td>PHP streams the file after checking that the viewer is enrolled. Videos stay on their private disk and no URL is ever exposed.</td>
-                <td>Default. Best for small audiences and local disks.</td>
-              </tr>
-              <tr>
-                <th scope="row"><code>signed</code></th>
-                <td>The API redirects to a bucket URL that expires after <code>VIDEO_SIGNED_URL_TTL</code> minutes (30 by default). Bandwidth goes straight from the bucket to the viewer.</td>
-                <td>Production with a bucket and real traffic. Falls back to proxying automatically when the disk cannot sign URLs.</td>
-              </tr>
+              <tr><td><code>MAIL_MAILER</code></td><td><code>smtp</code></td></tr>
+              <tr><td><code>MAIL_HOST</code></td><td>The SMTP hostname from your provider's "SMTP settings" page.</td></tr>
+              <tr><td><code>MAIL_PORT</code></td><td><code>587</code> for STARTTLS (the common choice), <code>465</code> for implicit TLS, <code>25</code> only if your host allows it.</td></tr>
+              <tr><td><code>MAIL_SCHEME</code></td><td><code>smtp</code> for port 587 / STARTTLS; <code>smtps</code> for port 465. Leave empty only when the provider explicitly says no encryption.</td></tr>
+              <tr><td><code>MAIL_USERNAME</code></td><td>Usually the full mailbox address; some providers use a fixed username such as <code>apikey</code>.</td></tr>
+              <tr><td><code>MAIL_PASSWORD</code></td><td>The SMTP password or API key from the provider — not your webmail login when two-factor authentication is on. Gmail requires an <em>App Password</em>.</td></tr>
+              <tr><td><code>MAIL_FROM_ADDRESS</code></td><td>The sender address, e.g. <code>no-reply@example.com</code>. It should be on your own domain and verified with the provider, or messages will be marked as spam.</td></tr>
+              <tr><td><code>MAIL_FROM_NAME</code></td><td>The sender name, e.g. your academy name. Quote it if it contains spaces.</td></tr>
             </tbody>
           </table>
         </div>
 
-        <h3>Moving existing files to a bucket</h3>
-        <p>Uploads made before the switch stay where they were. Copy them across with the included command, then set the disk to <code>s3</code>:</p>
-        <div class="codeblock" data-label="Terminal">
-          <pre><code>php artisan media:migrate-to-cloud --target=s3</code></pre>
+        <h3>Provider values</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Provider</th>
+                <th scope="col">Host</th>
+                <th scope="col">Port / scheme</th>
+                <th scope="col">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Gmail / Google Workspace</td><td><code>smtp.gmail.com</code></td><td>587 / <code>smtp</code></td><td>Requires 2-Step Verification and an App Password. The From address must match the account. Not suitable for bulk mail.</td></tr>
+              <tr><td>Amazon SES</td><td><code>email-smtp.&lt;region&gt;.amazonaws.com</code></td><td>587 / <code>smtp</code></td><td>Create SMTP credentials in the SES console; verify the domain and move out of the sandbox before launch.</td></tr>
+              <tr><td>Mailgun</td><td><code>smtp.mailgun.org</code></td><td>587 / <code>smtp</code></td><td>Username is the full postmaster address for your domain; password is the SMTP password, not the API key.</td></tr>
+              <tr><td>SendGrid</td><td><code>smtp.sendgrid.net</code></td><td>587 / <code>smtp</code></td><td>Username is literally <code>apikey</code>; password is the API key. Verify the sender domain first.</td></tr>
+              <tr><td>Brevo</td><td><code>smtp-relay.brevo.com</code></td><td>587 / <code>smtp</code></td><td>Use the SMTP key from Brevo, not the account password.</td></tr>
+              <tr><td>Zoho Mail</td><td><code>smtp.zoho.com</code></td><td>587 / <code>smtp</code></td><td>Use an app-specific password when 2FA is enabled.</td></tr>
+            </tbody>
+          </table>
         </div>
-        <p>The admin panel's <strong>Storage</strong> page mirrors all of these settings and writes them back to the same configuration, with a connection test and a report of what is stored where. Values saved in the panel take priority over the <code>.env</code> entries.</p>
+
+        <h3>Apply and test</h3>
+        <p>After saving <code>.env</code>, recreate the API container so it receives the new values. The first boot seeded the database already, so this is a restart, not a reinstall:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose up -d api
+docker compose logs --tail=20 api</code></pre>
+        </div>
+        <p>Then test with a real flow: open <code>https://example.com/forgot-password</code>, request a reset for the administrator address, and check that the message arrives. Mail is queued, and the API container runs the worker, so there is no separate service to start.</p>
+
+        <div class="note">
+          <span class="note-title">Where to look when mail does not arrive</span>
+          <ul>
+            <li><code>docker compose logs api | grep -i mail</code> — connection refused, authentication failed, or timeout errors appear here.</li>
+            <li>Admin &rarr; Settings &rarr; General Settings has a <strong>contact email</strong>; it is shown to visitors, but it is <em>not</em> the SMTP sender. The sender is always <code>MAIL_FROM_ADDRESS</code>.</li>
+            <li>If <code>MAIL_MAILER=log</code>, messages are written to the log and deliberately not delivered. That is the most common reason a test "sends nothing".</li>
+            <li>Check <code>failed_jobs</code> in the database or <code>docker compose logs api</code> for a queue job that exhausted its retries.</li>
+            <li>Gmail and many providers reject a From address that is not verified on the account. SPF, DKIM, and DMARC records for your domain decide whether mail lands in the inbox or in spam.</li>
+          </ul>
+        </div>
       </section>
 
-      <section class="sec" id="frontend">
-        <h2>Install the storefront</h2>
-        <p>Run these from the <code>frontend/</code> folder.</p>
+      <section class="sec" id="first-boot">
+        <h2>Build and start</h2>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>cd /opt/lms
+docker compose up -d</code></pre>
+        </div>
+        <p>The first run builds both images (10–20 minutes on a small server, mostly the Next.js build), waits for MySQL, migrates and seeds the database, then starts Caddy, which requests both certificates. Watch it:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose ps
+docker compose logs -f api caddy</code></pre>
+        </div>
+        <p>All four containers should report <code>running</code> (MySQL also <code>healthy</code>), and the Caddy log should end with <code>certificate obtained successfully</code> for each hostname.</p>
 
+        <h3>What the first boot does</h3>
         <ol class="steps">
           <li>
-            <h3>Install the Node dependencies</h3>
-            <div class="codeblock" data-label="Terminal">
-              <pre><code>npm install</code></pre>
-            </div>
+            <h3>Generates an application key</h3>
+            <p>Unless <code>APP_KEY</code> is set, a key is generated and written to <code>storage/app/.app-key</code> on the volume, so later restarts reuse it and encrypted sessions stay valid.</p>
           </li>
-
           <li>
-            <h3>Create the environment file</h3>
-            <div class="codeblock" data-label="frontend/.env.local">
-              <pre><code>NEXT_PUBLIC_API_PROD_URL=http://localhost:8000
-NEXT_PUBLIC_API_URL=http://localhost:8000
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-NEXT_PUBLIC_MEDIA_HOSTS=</code></pre>
-            </div>
-            <p>The two API values are the backend origin only — the <code>/api/v1</code> part is added by the code, so including it here produces 404s. <code>NEXT_PUBLIC_SITE_URL</code> is the storefront's own address and is only used for SEO links.</p>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">Variable</th>
-                    <th scope="col">Purpose</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th scope="row"><code>NEXT_PUBLIC_API_PROD_URL</code></th>
-                    <td>Base URL for every API call, including the CSRF cookie request.</td>
-                  </tr>
-                  <tr>
-                    <th scope="row"><code>NEXT_PUBLIC_API_URL</code></th>
-                    <td>Allows images served by the backend to load through <code>next/image</code>.</td>
-                  </tr>
-                  <tr>
-                    <th scope="row"><code>NEXT_PUBLIC_SITE_URL</code></th>
-                    <td>Public origin of the storefront itself (<code>https://www.example.com</code>), used for <code>/sitemap.xml</code>, <code>/robots.txt</code> and canonical/Open Graph URLs. Leave it out in development to use <code>http://localhost:3000</code>.</td>
-                  </tr>
-                  <tr>
-                    <th scope="row"><code>NEXT_PUBLIC_MEDIA_HOSTS</code></th>
-                    <td>Comma-separated extra hosts for images that come straight from a bucket or CDN, for example <code>my-bucket.s3.eu-west-1.amazonaws.com</code>. Leave empty when the backend serves them.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="warn">
-              <span class="note-title">These are baked in at build time</span>
-              <p>Next.js inlines <code>NEXT_PUBLIC_*</code> values when the app is built. Restart the development server after editing <code>.env.local</code>, and rebuild before deploying a change.</p>
-            </div>
+            <h3>Waits for the database and prepares storage</h3>
+            <p>The entrypoint polls MySQL until it accepts connections, links <code>public/storage</code> to the public disk, and fixes ownership so nginx and php-fpm can both read uploads.</p>
           </li>
-
           <li>
-            <h3>Run it</h3>
-            <div class="codeblock" data-label="Terminal">
-              <pre><code>npm run dev</code></pre>
-            </div>
-            <p>The site is on <code>http://localhost:3000</code>. Use <code>npm run dev:tls</code> instead if you need an HTTPS development origin — some gateways and OAuth providers insist on it.</p>
-            <p>For production:</p>
-            <div class="codeblock" data-label="Terminal">
-              <pre><code>npm run build
-npm start</code></pre>
-            </div>
+            <h3>Migrates every boot, seeds once</h3>
+            <p><code>php artisan migrate --force</code> runs on every start, so an updated image also updates an existing installation's schema. Seeding runs only the first time: a marker file <code>storage/app/.installed</code> records it, so restarts never duplicate the starting content or overwrite the administrator.</p>
+            <p>The administrator is part of that first seeding: it is created from <code>ADMIN_EMAIL</code> and <code>ADMIN_PASSWORD</code> without a manual command, and the boot log confirms it with <code>Administrator created: ...</code>.</p>
           </li>
         </ol>
 
-        <div class="note">
-          <span class="note-title">Build with the backend reachable</span>
-          <p>Several public pages are server-rendered with live API data, and <code>npm run build</code> pre-renders them. If the backend is not running at build time, the build stops on a <code>fetch failed</code> error for a page such as <code>/instructors</code>. Start the API first.</p>
-        </div>
-      </section>
-
-      <section class="sec" id="first-run">
-        <h2>First run in the admin panel</h2>
-        <p>With both applications running and an administrator signed in at <code>/admin</code>, work down this list. Each row is a page in the panel; the last chapter describes every page in detail.</p>
+        <h3>Sign in</h3>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th scope="col">Panel page</th>
-                <th scope="col">What to set</th>
+                <th scope="col">URL</th>
+                <th scope="col">What</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <th scope="row">Settings &rarr; General Settings</th>
-                <td>Site name (used in page titles, the footer, the panel brand, and certificates), logo, favicon.</td>
-              </tr>
-              <tr>
-                <th scope="row">Settings &rarr; Payment Gateways</th>
-                <td>Enable the gateways you use and paste their keys. Register the Stripe webhook at <code>{APP_URL}/api/v1/webhooks/stripe</code> and the Mollie one at <code>{APP_URL}/api/v1/webhooks/mollie</code>.</td>
-              </tr>
-              <tr>
-                <th scope="row">Settings &rarr; Payout Methods</th>
-                <td>Instructor commission percentage, the minimum payout amount, and the payout methods instructors may choose from.</td>
-              </tr>
-              <tr>
-                <th scope="row">Settings &rarr; Social Login</th>
-                <td>Google client ID and secret. Register the redirect URI printed in the panel as the "Authorized redirect URI" in the Google Cloud Console — sign-in always returns to the origin it started on, and the panel shows the exact value for your layout.</td>
-              </tr>
-              <tr>
-                <th scope="row">Settings &rarr; Storage</th>
-                <td>Lesson media disk, delivery mode, and bucket credentials. Use the connection test before uploading a large course.</td>
-              </tr>
-              <tr>
-                <th scope="row">Content &rarr; Homepage Content</th>
-                <td>The landing page sections and their text and images.</td>
-              </tr>
-              <tr>
-                <th scope="row">Content &rarr; Footer</th>
-                <td>Footer columns, links, and social icons.</td>
-              </tr>
-              <tr>
-                <th scope="row">Content &rarr; Terms &amp; Privacy</th>
-                <td>The terms of service and privacy policy, each with its own title and rich-text body. They render at <code>/terms</code> and <code>/privacy-policy</code>.</td>
-              </tr>
-              <tr>
-                <th scope="row">Content &rarr; Cookie Consent</th>
-                <td>The consent banner: heading, body, button labels, and the label of the cookie policy link.</td>
-              </tr>
-              <tr>
-                <th scope="row">Courses &rarr; Categories</th>
-                <td>At least one category before courses can be published.</td>
-              </tr>
+              <tr><td><code>https://example.com</code></td><td>The storefront: catalog, course pages, checkout, student and instructor dashboards.</td></tr>
+              <tr><td><code>https://api.example.com/admin</code></td><td>The Filament admin panel. Sign in with <code>ADMIN_EMAIL</code> and <code>ADMIN_PASSWORD</code>.</td></tr>
+              <tr><td><code>https://example.com/api/v1/settingsData</code></td><td>A public API endpoint — a quick health check for the backend.</td></tr>
+              <tr><td><code>https://api.example.com/storage/&hellip;</code></td><td>Uploaded thumbnails, avatars, and the logo.</td></tr>
             </tbody>
           </table>
         </div>
+
+        <h3>Changing the administrator later</h3>
+        <p>Seeding only runs once, so editing <code>.env</code> afterwards changes nothing by itself. To move the account to another address, or to recover a forgotten password, set the new values in <code>.env</code>, recreate the API container, and run the seeder again — it updates that account instead of creating a second one:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose up -d api
+docker compose exec api php artisan db:seed --class=AdminSeeder --force</code></pre>
+        </div>
+        <p>Use a new <code>ADMIN_EMAIL</code> to add a second administrator; the existing account is left untouched.</p>
+
+        <div class="note">
+          <span class="note-title">If the frontend build is killed with "signal 9"</span>
+          <p>The Next.js build needs roughly 2&nbsp;GB of RAM on its own. On a 2&nbsp;GB server add swap before building:</p>
+          <div class="codeblock" data-label="Terminal">
+            <pre><code>sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab</code></pre>
+          </div>
+        </div>
       </section>
 
-      <section class="sec" id="production">
-        <h2>Going live</h2>
-        <p>Work through this before pointing a domain at the installation.</p>
+      <section class="sec" id="https">
+        <h2>HTTPS and certificates</h2>
+        <p>Caddy is the only container exposed to the internet. It answers on 80 and 443 for both hostnames, redirects plain HTTP to HTTPS, and obtains a Let's Encrypt certificate for each name once DNS resolves. Nothing is bought, copied, or renewed by hand.</p>
+        <div class="table-wrap">
+          <table>
+            <caption>What runs on its own</caption>
+            <thead>
+              <tr>
+                <th scope="col">Task</th>
+                <th scope="col">Handled by</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>First certificate for both names</td><td>Caddy, within a minute of the stack starting, provided DNS resolves and ports 80/443 reach the server.</td></tr>
+              <tr><td>Renewal before the 90 days run out</td><td>Caddy, roughly 30 days ahead, retrying on its own if an attempt fails.</td></tr>
+              <tr><td>HTTP &rarr; HTTPS</td><td>Caddy, for both hostnames.</td></tr>
+              <tr><td>Surviving updates and reboots</td><td>The <code>lms-caddy-data</code> volume, which keeps the certificates and the ACME account key.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Checking issuance and renewal</h3>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code># successful orders and failures
+docker compose logs caddy | grep -i certificate
+
+# the names currently issued
+docker compose exec caddy ls /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory</code></pre>
+        </div>
+        <p>A failed order states the reason in that log: DNS not resolving, port unreachable, or a rate limit. Let's Encrypt allows five certificates per name per week, so do not reset the Caddy volume repeatedly.</p>
+
+        <h3>Moving to another domain</h3>
+        <p>Put the new names in <code>.env</code> and rebuild, because the storefront origin is compiled into the browser bundle:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose up -d --build</code></pre>
+        </div>
+        <p>Keep the old DNS records pointing here until the new names answer, so no visitor lands on a hostname without a certificate. Caddy notices the new names and requests their certificates; the old ones stay in the volume and expire unused.</p>
+
+        <h3>Certificate-expiry mail (optional)</h3>
+        <p>Renewal is automatic, so this mail is a safety net. Add your address inside the global block of <code>docker/caddy/Caddyfile</code> and restart Caddy:</p>
+        <div class="codeblock" data-label="docker/caddy/Caddyfile">
+          <pre><code>{
+	email you@example.com
+	admin off
+}</code></pre>
+        </div>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose restart caddy</code></pre>
+        </div>
+
+        <div class="note">
+          <span class="note-title">Cookies require HTTPS in production</span>
+          <p>The image runs with <code>APP_ENV=production</code>, which marks the session cookie <code>Secure</code>. Logins therefore only work over <code>https://</code>; testing through <code>http://SERVER_IP:3000</code> will appear to succeed and then drop the session. Always test through the domain.</p>
+        </div>
+      </section>
+
+      <section class="sec" id="operations">
+        <h2>Day-to-day operations</h2>
+
+        <h3>Logs and a shell</h3>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose logs -f api web caddy
+docker compose exec api php artisan about
+docker compose exec api sh</code></pre>
+        </div>
+        <p>Application logs go to stderr, so they appear in <code>docker compose logs</code> rather than a file inside the container.</p>
+
+        <h3>Where the data lives</h3>
+        <p>Docker prefixes volume names with the Compose project name (<code>lms</code>), so the volume declared as <code>lms-storage</code> is <code>lms_lms-storage</code> on disk.</p>
         <ul>
-          <li>Set <code>APP_ENV=production</code>, <code>APP_DEBUG=false</code>, and real HTTPS values for <code>APP_URL</code>, <code>FRONTEND_URL</code>, <code>SANCTUM_STATEFUL_DOMAINS</code>, and <code>CORS_ALLOWED_ORIGINS</code>. Turn on <code>SESSION_SECURE_COOKIE</code>.</li>
-          <li>Point the web server's document root at the Laravel <code>public/</code> folder, never at the application root.</li>
-          <li>Build the storefront with production API URLs, then run it behind the same TLS setup.</li>
-          <li>Run <code>composer install --no-dev --optimize-autoloader</code> and <code>php artisan optimize</code> on the server.</li>
-          <li>Keep one queue worker alive under a process supervisor, for example <code>php artisan queue:work --tries=3 --timeout=120</code>, and restart it on each deploy.</li>
-          <li>Register the scheduler with a single cron entry: <code>* * * * * cd /path/to/app &amp;&amp; php artisan schedule:run &gt;&gt; /dev/null 2&gt;&amp;1</code>.</li>
-          <li>Register both webhook endpoints with the gateways you enabled, and send a test event to confirm they are accepted.</li>
-          <li>Move lesson media to a private bucket, then verify playback and a download as an enrolled student.</li>
-          <li>Schedule backups of the database and the bucket. Certificates and orders live in the database; losing either is unrecoverable.</li>
+          <li><code>lms_lms-mysql</code> — the whole database.</li>
+          <li><code>lms_lms-storage</code> — mounted at <code>/var/www/html/storage</code>: <code>app/public/</code> (thumbnails, avatars, logos, certificates), <code>app/private/</code> (lesson videos and attachments), and <code>logs/</code>.</li>
+          <li><code>lms_lms-caddy-data</code>, <code>lms_lms-caddy-config</code> — certificates and Caddy state. Neither needs backing up; they are reissued if lost.</li>
         </ul>
+
+        <h3>Backups</h3>
+        <p>Back up the database and the storage volume together. A database dump alone restores a site whose courses point at missing videos.</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>cd /opt/lms
+
+# database
+docker compose exec -T mysql sh -c \
+  'exec mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --single-transaction "$MYSQL_DATABASE"' \
+  &gt; "db-$(date +%F).sql"
+
+# uploads, videos, attachments
+docker run --rm \
+  -v lms_lms-storage:/data:ro \
+  -v "$PWD":/backup \
+  alpine tar czf "/backup/storage-$(date +%F).tar.gz" -C /data .</code></pre>
+        </div>
+        <p>Copy both files off the server. Test a restore on a spare machine before you need it.</p>
+
+        <h3>Updating the application</h3>
+        <p>Replace the code with the new version, keeping <code>.env</code> and the volumes, then rebuild. Migrations run automatically when the API container starts:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>cd /opt/lms
+# replace localhost/, frontend/, docker/, docker-compose.yml with the new release
+docker compose up -d --build
+docker compose ps
+docker compose logs --tail=60 api</code></pre>
+        </div>
+        <div class="warn">
+          <span class="note-title">Back up before an update</span>
+          <p>Take the database and storage backup above first. A migration that removes or rewrites a column cannot be undone by rebuilding the previous image.</p>
+        </div>
+
+        <h3>Queue and failed jobs</h3>
+        <p>The <code>api</code> container runs <code>php artisan queue:work</code> under supervisord, so queued mail and notifications are delivered without any extra service. It restarts by itself and is recycled hourly. To inspect it:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose exec api ps -ef | grep queue:work
+docker compose exec api php artisan queue:failed
+docker compose exec api php artisan queue:retry all</code></pre>
+        </div>
+
+        <h3>Media on a bucket</h3>
+        <p>Lesson videos can stay on the storage volume or move to an S3-compatible bucket. The switch is made in Admin &rarr; Settings &rarr; Storage, with a connection test before you commit. Existing files are not moved automatically — copy them with the included command:</p>
+        <div class="codeblock" data-label="Terminal">
+          <pre><code>docker compose exec api php artisan media:migrate-to-cloud --target=s3</code></pre>
+        </div>
+        <p>The bucket must stay private. The API streams the bytes itself or redirects to a short-lived signed URL; a public bucket would let anyone download a course.</p>
       </section>
 
       <section class="sec" id="troubleshooting">
-        <h2>When something does not work</h2>
-        <p>The failures below cover almost every setup problem reported at this stage.</p>
+        <h2>Troubleshooting</h2>
         <div class="table-wrap">
           <table>
             <thead>
@@ -473,32 +618,36 @@ npm start</code></pre>
             </thead>
             <tbody>
               <tr>
-                <th scope="row">Sign-in returns 419, or the account is "unauthenticated" right after logging in</th>
-                <td>The storefront origin is not trusted by the backend. Add the exact host and port to <code>SANCTUM_STATEFUL_DOMAINS</code> and <code>CORS_ALLOWED_ORIGINS</code>, make sure <code>FRONTEND_URL</code> matches, then run <code>php artisan optimize:clear</code>.</td>
+                <th scope="row">Compose refuses to start and prints <code>ADMIN_EMAIL is required</code></th>
+                <td><code>.env</code> is missing or was created in the wrong folder. It must sit next to <code>docker-compose.yml</code>.</td>
               </tr>
               <tr>
-                <th scope="row">Uploaded images from a bucket never appear</th>
-                <td>Their host is not in the image allow-list. Add it to <code>NEXT_PUBLIC_MEDIA_HOSTS</code> and restart or rebuild the storefront — <code>next.config.mjs</code> reads this file at startup.</td>
+                <th scope="row">The home page loads but every section is empty</th>
+                <td>The API container is not healthy. <code>docker compose logs --tail=100 api</code> shows the migration or boot error.</td>
               </tr>
               <tr>
-                <th scope="row">A lesson video returns 404 or 403</th>
-                <td>The file is not on the configured disk. Check <code>LESSON_VIDEO_DISK</code> and the bucket credentials on the panel's Storage page, and use the connection test. Signed mode falls back to proxying when the disk cannot sign URLs.</td>
+                <th scope="row">Caddy reports a certificate failure</th>
+                <td>DNS does not point at this server, or ports 80/443 are blocked or owned by another process. Check with <code>dig +short</code> and <code>sudo ss -ltnp | grep -E ':80|:443'</code>.</td>
               </tr>
               <tr>
-                <th scope="row">Verification and reset emails never arrive</th>
-                <td>Either <code>MAIL_MAILER</code> is still <code>log</code>, or no queue worker is running. Check <code>storage/logs/laravel.log</code> for the queued mail, then start <code>php artisan queue:work</code>.</td>
+                <th scope="row">Login seems to succeed, then drops the session</th>
+                <td>You are testing over plain HTTP or through the IP instead of the domain. Production cookies are <code>Secure</code>; use <code>https://example.com</code>.</td>
               </tr>
               <tr>
-                <th scope="row">A settings change in .env has no effect</th>
-                <td>Configuration is cached. Run <code>php artisan optimize:clear</code>.</td>
+                <th scope="row">Sign-in returns 419</th>
+                <td>The storefront origin does not match <code>WEB_DOMAIN</code>, or the <code>web</code> image was built before the domain was changed. Rebuild with <code>docker compose up -d --build</code>.</td>
               </tr>
               <tr>
-                <th scope="row">The checkouts succeed but no course appears for the student</th>
-                <td>Nothing was enrolled because the payment was never finalized. Confirm the webhook endpoints are registered and reachable, then check the Payments list in the panel for the pending attempt.</td>
+                <th scope="row">No email arrives</th>
+                <td>Check <code>MAIL_MAILER</code> (log sends nothing), the SMTP credentials, and the API log. See <a href="#smtp">Email (SMTP)</a>.</td>
               </tr>
               <tr>
-                <th scope="row">The storefront build fails on a page like <code>/instructors</code></th>
-                <td>That page is pre-rendered from live API data and the backend was unreachable. Start the API, then build again.</td>
+                <th scope="row">Uploads fail with a 500 or a permission error</th>
+                <td>The storage volume is full, or its ownership was changed by hand. <code>df -h</code> and <code>docker compose logs api</code> first; avoid <code>chown</code> inside the volume unless you know the container's UID.</td>
+              </tr>
+              <tr>
+                <th scope="row">The build is killed with exit code 137</th>
+                <td>The server ran out of memory during the Next.js build. Add swap (see above) or build on a larger machine.</td>
               </tr>
             </tbody>
           </table>
@@ -521,14 +670,12 @@ npm start</code></pre>
 
 <footer class="site-foot">
   <div class="foot-inner">
-    <span>LMS platform documentation &middot; v1.0 &middot; October 2026</span>
+    <span>LMS platform documentation &middot; v1.0 &middot; November 2026</span>
     <a href="index.html">Overview</a>
     <a href="students.html">Students</a>
     <a href="instructors.html">Instructors</a>
     <a href="admin.html">Admin</a>
     <a href="api.html">API</a>
-    <a href="docker.html">Docker</a>
-    <a href="deployment.html">Deploy</a>
   </div>
 </footer>
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\CertificateService;
 use App\Support\MediaDiskResolver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -60,6 +61,7 @@ class Course extends Model
         'currency',
         'rating',
         'is_active',
+        'is_featured'
     ];
 
     protected $casts = [
@@ -88,6 +90,16 @@ class Course extends Model
             // new upload on the current disk — remember it.
             if ($course->wasChanged('preview_video') && $course->preview_video) {
                 MediaDiskResolver::stamp($course, 'preview_video', MediaDiskResolver::currentDisk());
+            }
+
+            // The course just closed: hand the certificate to everyone who
+            // finished it while it was still ongoing. A certificate problem
+            // must never roll back the instructor's save.
+            if ($course->wasChanged('status') && $course->status === 'completed') {
+                rescue(
+                    fn () => app(CertificateService::class)->issueForCompletedCourse((int) $course->id),
+                    report: true
+                );
             }
         });
     }

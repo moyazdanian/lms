@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Admin panel — LMS Documentation</title>
-<meta name="description" content="Every group, resource, and settings page in the Filament admin panel, and what each one controls." />
+<meta name="description" content="Every screen in the Filament admin panel: courses and approvals, users and instructors, orders, payments, payouts, coupons, certificates, quizzes, content, communication, and every settings page — including where to obtain Stripe, PayPal, Mollie, Razorpay, Google, and S3 credentials." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Source+Serif+4:opsz,wght@8..60,400..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -19,7 +19,7 @@
     <span class="brand-mark">LMS</span>
     <span class="brand-text">Documentation</span>
   </a>
-  <p class="topbar-meta">v1.0 &middot; October 2026</p>
+  <p class="topbar-meta">v1.0 &middot; November 2026</p>
   <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
 </header>
 
@@ -32,13 +32,11 @@
     </div>
     <ol class="chapters">
       <li><a href="index.html"><span class="num">01</span> Overview</a></li>
-      <li><a href="installation.html"><span class="num">02</span> Installation</a></li>
+      <li><a href="installation.html"><span class="num">02</span> Installation on a server</a></li>
       <li><a href="students.html"><span class="num">03</span> Student experience</a></li>
       <li><a href="instructors.html"><span class="num">04</span> Instructor workspace</a></li>
       <li><a href="admin.html" class="is-current" aria-current="page"><span class="num">05</span> Admin panel</a></li>
       <li><a href="api.html"><span class="num">06</span> API reference</a></li>
-      <li><a href="docker.html"><span class="num">07</span> Docker deployment</a></li>
-      <li><a href="deployment.html"><span class="num">08</span> Deploy to a server</a></li>
     </ol>
     <div class="rail-section" id="onThisPage" hidden>
       <h2 class="rail-heading">On this page</h2>
@@ -51,16 +49,40 @@
       <header class="chapter-open">
         <span class="chapter-num" aria-hidden="true">05</span>
         <h1>Admin panel</h1>
-        <p class="chapter-lede">The control room. Nineteen resources and six settings pages, ordered here exactly as the panel's sidebar orders them, so you can find anything by looking at your own screen.</p>
-        <p class="chapter-meta">Nine sections, one per sidebar group. Every page in the panel is behind the administrator role and every action is written to an audit log.</p>
+        <p class="chapter-lede">The control room. Every screen in the panel, in the order the sidebar presents it, with what each field does, where the result appears on the storefront, and — for the settings that need an outside account — exactly where to obtain the keys.</p>
+        <p class="chapter-meta">Nine sections: this overview, then the eight sidebar groups — Orders and Payments share one section. The last section is the longest on purpose: gateways, Google sign-in, and object storage are the three places an installation is most often misconfigured.</p>
       </header>
 
       <section class="sec" id="panel">
         <h2>The panel at a glance</h2>
-        <p>The panel is served by the same Laravel application as the API, at <code>/admin</code>. It is a Filament application, so tables are searchable and sortable, filters and bulk actions are everywhere, and forms validate before they save.</p>
+        <p>The panel is served by the Laravel application at <code>https://api.example.com/admin</code>. It is a Filament application: every table searches, sorts, filters, and offers bulk actions, and every form validates before it saves. Only users with the administrator role can open it.</p>
+
+        <h3>Sidebar map</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Group</th>
+                <th scope="col">Screens</th>
+                <th scope="col">Read about it in</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Courses</strong></td><td>Categories, Courses, Course Approvals, Course Edit Requests, Enrollments</td><td><a href="#courses">Courses</a></td></tr>
+              <tr><td><strong>Users</strong></td><td>All Users, All Instructors, Instructor Applications</td><td><a href="#users">Users</a></td></tr>
+              <tr><td><strong>Orders</strong></td><td>Orders</td><td><a href="#commerce">Orders and payments</a></td></tr>
+              <tr><td><strong>Payments</strong></td><td>Payments, Payout Requests</td><td><a href="#commerce">Orders and payments</a></td></tr>
+              <tr><td><strong>Coupons</strong></td><td>Coupons, Coupon Usages</td><td><a href="#coupons">Coupons</a></td></tr>
+              <tr><td><strong>Certificates</strong></td><td>Certificates, Quizzes</td><td><a href="#certificates-group">Certificates and quizzes</a></td></tr>
+              <tr><td><strong>Content</strong></td><td>Homepage Content, Footer, Terms &amp; Privacy, Cookie Consent, Blog</td><td><a href="#content-group">Content</a></td></tr>
+              <tr><td><strong>Communication</strong></td><td>Send Notifications, Support Tickets</td><td><a href="#communication">Communication</a></td></tr>
+              <tr><td><strong>Settings</strong></td><td>General Settings, Payment Gateways, Payout Methods, Social Login, Storage, Storage Report</td><td><a href="#settings">Settings</a></td></tr>
+            </tbody>
+          </table>
+        </div>
 
         <h3>The dashboard</h3>
-        <p>The first screen after signing in answers "is anything waiting for me?" before it shows anything else:</p>
+        <p>The first screen answers "is anything waiting for me?" before it shows anything else.</p>
         <div class="table-wrap">
           <table>
             <thead>
@@ -70,103 +92,166 @@
               </tr>
             </thead>
             <tbody>
+              <tr><th scope="row">Paid Revenue</th><td>The gross value of order items whose payment settled — the marketplace's turnover, before instructor commission.</td></tr>
+              <tr><th scope="row">Paid Orders</th><td>How many orders reached <code>paid</code>.</td></tr>
+              <tr><th scope="row">Active Instructors</th><td>Accounts with the instructor role whose user account is active.</td></tr>
+              <tr><th scope="row">Pending Payout Requests</th><td>A count that links straight to the withdrawal queue.</td></tr>
+              <tr><th scope="row">Instructor Applications</th><td>A count that links to the applications waiting for a decision.</td></tr>
+              <tr><th scope="row">Sales trend</th><td>Revenue over time across the whole marketplace.</td></tr>
+              <tr><th scope="row">Top instructors</th><td>Who is earning the most.</td></tr>
+              <tr><th scope="row">Latest course sales</th><td>The most recent purchases with student and course.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Conventions that apply everywhere</h3>
+        <ul>
+          <li><strong>Secrets are write-only.</strong> Password fields show a blank box on every visit. Saving with the box empty keeps the stored value; typing a new value replaces it. Nothing is ever read back into the browser.</li>
+          <li><strong>Saved settings take effect immediately.</strong> Gateway, Google, and storage values are read from the database on every request, so there is no deploy and no restart.</li>
+          <li><strong>Deletes are permanent.</strong> There is no trash can for most resources. Deleting a course with enrolled students is refused by the API, but the panel's delete action should still be treated as final.</li>
+          <li><strong>The audit log records what you do.</strong> Every panel visit and every create, update, or delete is written to the <code>admin_audit</code> log channel with the administrator's identity, IP, URL, and submitted input. Password, token, secret, and key fields are redacted first.</li>
+        </ul>
+      </section>
+
+      <section class="sec" id="courses">
+        <h2>Courses</h2>
+        <p>Five screens cover the catalog, the two review queues, and who is enrolled in what. Before reading them, keep three independent ideas apart — they are the source of most confusion:</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
               <tr>
-                <th scope="row">Paid revenue</th>
-                <td>Total gross value of payments that settled.</td>
+                <th scope="col">Idea</th>
+                <th scope="col">Field</th>
+                <th scope="col">Values</th>
+                <th scope="col">Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Approval</th>
+                <td><code>approval_status</code></td>
+                <td>draft, pending_approval, approved, rejected</td>
+                <td>Whether the course has passed review. Only <strong>approved</strong> courses can appear in the catalog.</td>
               </tr>
               <tr>
-                <th scope="row">Paid orders</th>
-                <td>How many orders completed.</td>
+                <th scope="row">Publication</th>
+                <td><code>is_active</code></td>
+                <td>on / off</td>
+                <td>The "Active" toggle on the course form. An approved course is visible only when this is on.</td>
               </tr>
               <tr>
-                <th scope="row">Active instructors</th>
-                <td>Instructors who are not banned.</td>
-              </tr>
-              <tr>
-                <th scope="row">Pending payout requests</th>
-                <td>A count that links straight to the queue, highlighted as needing attention.</td>
-              </tr>
-              <tr>
-                <th scope="row">Instructor applications</th>
-                <td>Applications waiting for a decision, also linked and highlighted.</td>
-              </tr>
-              <tr>
-                <th scope="row">Sales trend</th>
-                <td>Revenue over time across the whole marketplace.</td>
-              </tr>
-              <tr>
-                <th scope="row">Top instructors</th>
-                <td>Who is earning the most, useful when deciding who to feature.</td>
-              </tr>
-              <tr>
-                <th scope="row">Latest course sales</th>
-                <td>The most recent purchases with student and course.</td>
+                <th scope="row">Lifecycle</th>
+                <td><code>status</code></td>
+                <td>ongoing, completed</td>
+                <td>Whether teaching is still running. It is <em>not</em> draft/published, and it controls certificate eligibility: no certificate is issued while a course is ongoing.</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <h3>Branding and access</h3>
+        <h3>Categories</h3>
+        <p>The catalog's taxonomy. Every course belongs to exactly one category.</p>
         <ul>
-          <li>The sidebar brand and the browser favicon come from <strong>General Settings</strong>, so the panel carries your identity, not the product's.</li>
-          <li>The sidebar is grouped exactly as this chapter is: Courses, Payments, Orders, Content, Certificates, Users, Coupons, Communication, Settings.</li>
-          <li>Only accounts with the administrator role can open the panel.</li>
+          <li><strong>Fields</strong> — parent category (optional, top-level categories only), name, slug, description.</li>
+          <li><strong>Where it appears</strong> — the category filter on <code>/courses</code>, the category cards on the homepage, and a public page at <code>/categories/{slug}</code>. The order is the one set in the list.</li>
+          <li><strong>Practical note</strong> — a course cannot be saved without a category, so create the taxonomy before importing courses. Renaming a category changes its label everywhere; changing its slug changes the public URL.</li>
         </ul>
 
-        <h3>Audit trail</h3>
-        <p>Every panel visit and every state-changing request — create, update, delete — is written to a dedicated <code>admin_audit</code> log channel with the administrator's identity, IP address, URL, and submitted input. Password, token, secret, and key fields are redacted before they are written, so the log can be read safely.</p>
-      </section>
-
-      <section class="sec" id="courses">
-        <h2>Courses</h2>
-        <p>The largest group in the panel. Five screens cover catalog structure, the two approval queues, and who is enrolled in what.</p>
-
-        <h3>Categories</h3>
-        <p>The catalog's taxonomy. A course belongs to one category, category pages are public at <code>/categories/{slug}</code>, and the catalog filter builds its options from this list. Categories are ordered by their own sort field, which is the order visitors see.</p>
-
         <h3>Courses</h3>
-        <p>Every course in the system, with its instructor, category, price, status, and approval state. An administrator can create or edit a course directly, flip the <strong>featured</strong> flag that puts it on the homepage, deactivate one that should disappear from the catalog without being deleted, and correct a price or description when support asks.</p>
+        <p>The full catalog with instructor, category, price, lifecycle status, approval state, and the Active toggle. The row action is <strong>Edit</strong>; bulk delete is available for courses that no longer have students.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Field</th>
+                <th scope="col">What it controls</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Category, Instructor</td><td>Ownership and taxonomy. The instructor list contains accounts with the instructor or admin role.</td></tr>
+              <tr><td>Title, Slug</td><td>The public name and URL, at <code>/courses/{slug}</code>. The slug auto-fills from the title but can be edited.</td></tr>
+              <tr><td>Thumbnail</td><td>Card and course-page image. Stored on the public disk.</td></tr>
+              <tr><td>Preview video</td><td>The public trailer. Stored on the private lesson disk and streamed only through the preview endpoint.</td></tr>
+              <tr><td>Short description, Description</td><td>Card summary and the rich-text body on the Overview tab.</td></tr>
+              <tr><td>Requirements, Objectives, Tags</td><td>Lists shown on the course page and used by catalog search.</td></tr>
+              <tr><td>Price, Discount price</td><td>List price and the lower price a student actually pays. The discount must be below the list price.</td></tr>
+              <tr><td>Status</td><td><strong>Ongoing</strong> while lessons are still being added; <strong>Completed</strong> when the course is finished. Marking a course completed is what unlocks certificate issuance for students who already met the requirements.</td></tr>
+              <tr><td>Level, Language</td><td>Catalog filters and course metadata.</td></tr>
+              <tr><td>Active</td><td>Publication switch. Off hides an otherwise approved course without deleting it.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="warn">
+          <span class="note-title">A course added in the panel starts as a draft</span>
+          <p>The panel's create form is a data-entry tool, not a shortcut around review: a new row begins at <code>draft</code> and therefore does not appear in the catalog. The review queue only lists courses that were explicitly submitted by an instructor, so the normal publishing path is: the instructor creates and submits, and you approve it in <strong>Course Approvals</strong>. Use the panel's create form only when you have a plan for that course's approval state.</p>
+        </div>
 
         <h3>Course Approvals</h3>
-        <p>The queue of submitted courses. Open one to read it as a student would — description, objectives, curriculum, preview video — then approve it, which publishes it and notifies the instructor, or reject it with a reason, which returns it to the instructor for changes. Approval and rejection are available both from the row and from the course's own page.</p>
+        <p>The queue of submitted courses — drafts are deliberately excluded. Open a row for a decision snapshot: thumbnail, instructor, category, price, discount, level, language, section and lesson counts, enrollment and instructor revenue, plus the short description, full description, and trailer. The curriculum itself is one click away through <strong>Open this course in the admin editor</strong>. Two actions decide it:</p>
+        <ul>
+          <li><strong>Approve</strong> — sets the approval to <code>approved</code>, turns <code>is_active</code> on, and emails plus notifies the instructor. The course is on sale immediately.</li>
+          <li><strong>Reject</strong> — requires a reason (3–2000 characters). The reason is emailed and shown in the instructor's editor; the course returns to the instructor for changes.</li>
+        </ul>
+        <p>The list refreshes itself every 30 seconds, and the sidebar badge counts pending submissions. Courses already approved stay in the list for reference; the Status filter narrows it to Pending when you are working the queue.</p>
 
         <h3>Course Edit Requests</h3>
-        <p>Changes instructors propose for courses that are already live. Each request lists the affected fields with the current and the proposed value, and the pending preview video can be played next to the live one before deciding. Approving applies the whole batch; rejecting leaves the live course exactly as it was and records the reason for the instructor.</p>
+        <p>Once a course is live, the instructor may not silently change what students bought. Changes to <strong>title, price, discount price, level, language, category, thumbnail, and preview video</strong> are collected into a single pending request instead of being applied.</p>
+        <ul>
+          <li>Each request lists the affected fields with the current and proposed values, and any proposed trailer can be played beside the live one.</li>
+          <li>Approving applies the whole batch, deletes the replaced media file, and notifies the instructor.</li>
+          <li>Rejecting requires a reason, keeps the live course exactly as it was, deletes the uploaded replacement media, and notifies the instructor.</li>
+          <li>While a request is pending the course stays approved and on sale. Pending changes from the same instructor merge into one request; reverting a field removes it from the batch.</li>
+        </ul>
+        <p>Non-sensitive edits — description, objectives, requirements, tags, curriculum, and the ongoing/completed lifecycle — are applied immediately and never enter this queue.</p>
 
         <h3>Enrollments</h3>
-        <p>The student-to-course links that decide who may watch what. Each row shows the student, the course, and the enrollment status, which is the same record the video and attachment endpoints check. When a payment is refunded or a mistake in support needs correcting, this is where access is corrected.</p>
+        <p>The student-to-course links that decide who may watch what. Each row shows the student, course, payment, status (active, completed, canceled), and progress percentage. The video, attachment, quiz, and certificate endpoints all check this record.</p>
+        <p>Use it to correct access after a refund or a support mistake: setting the status to <code>canceled</code> removes access; creating a row grants it. Deleting an enrollment removes the student's progress record's authorization even though the lesson progress rows remain in the database.</p>
 
-        <h3>Media previews</h3>
-        <p>Lesson videos and course previews are private, but the panel can play them: an administrator previews a lesson video, a course trailer, or both versions of a trailer in an edit request without ever exposing a public file URL.</p>
+        <h3>Private media previews</h3>
+        <p>Lesson videos and trailers live on a private disk and have no public URL. The panel can still play them: the course detail and approval screens show the trailer, and the lesson relation managers show the uploaded video. Playback is authorized by the admin session, so a copied URL does not work for anyone else.</p>
       </section>
 
       <section class="sec" id="users">
         <h2>Users</h2>
         <p>Three lists, split by what the administrator needs: all accounts, the teaching side, and the people who want to join it.</p>
+
+        <h3>All Users</h3>
+        <p>Search and edit any account. The form edits <strong>name</strong>, <strong>email</strong>, and (on create) <strong>password</strong>; the list also shows each account's role and creation date. Delete is available for accounts that should be removed entirely.</p>
+        <div class="note">
+          <span class="note-title">Roles are granted by workflow, not by this form</span>
+          <p>The user edit screen does not expose a role selector in this version. A student becomes an instructor through <strong>Instructor Applications &rarr; Approve</strong>, which sets the role and creates the teaching profile in one transaction. If a role must be changed by hand, do it in the database with care: an instructor without an instructor profile cannot use the teaching workspace.</p>
+        </div>
+
+        <h3>All Instructors</h3>
+        <p>Every account with the instructor or admin role, with its teaching profile attached as a relation. The profile record is the part that matters:</p>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th scope="col">Screen</th>
-                <th scope="col">What it is for</th>
+                <th scope="col">Profile field / action</th>
+                <th scope="col">Effect</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <th scope="row">All Users</th>
-                <td>Search and edit any account: details, role, and status. Promotion or demotion happens here when it is not the result of an instructor application.</td>
-              </tr>
-              <tr>
-                <th scope="row">All Instructors</th>
-                <td>Instructors with their teaching profile beside the account — biography, expertise, links, rating, and status. The profile actions allow banning an instructor, restoring one, or rejecting the profile outright, which locks the instructor workspace without touching the account or its courses.</td>
-              </tr>
-              <tr>
-                <th scope="row">Instructor Applications</th>
-                <td>Pending applications with the applicant's biography, expertise, and links. Approving creates the instructor profile and role; rejecting records a note the applicant can read.</td>
-              </tr>
+              <tr><td>Bio, Expertise, Social links</td><td>Shown on the public instructor directory and the Instructor tab of every course they teach.</td></tr>
+              <tr><td>Rating</td><td>The average used in the directory. It is maintained by the platform, not typed by hand.</td></tr>
+              <tr><td>Status: active</td><td>Full access to the teaching workspace.</td></tr>
+              <tr><td>Status: banned</td><td>Locks the teaching workspace — no new or edited courses — while existing courses stay visible. Reversible with <strong>Restore to Active</strong>.</td></tr>
+              <tr><td>Status: rejected</td><td>Blocks sign-in and hides all of their courses from the public site. Also reversible from this screen.</td></tr>
+              <tr><td>View Profile</td><td>Reads the bio, expertise, rating, and links in a modal without opening the editor.</td></tr>
             </tbody>
           </table>
         </div>
+        <p>The profile form stores social links as a JSON object, so enter them as valid JSON (<code>{"website":"https://…"}</code>) when editing the raw field.</p>
+
+        <h3>Instructor Applications</h3>
+        <p>Applications submitted from the storefront, with the applicant's bio, expertise, links, and status. <strong>View</strong> opens the full pitch without leaving the list.</p>
+        <ul>
+          <li><strong>Approve</strong> — turns the account into an instructor, creates the teaching profile from the application, marks the application approved, and sends an email plus an in-app notification with a link to the teaching workspace.</li>
+          <li><strong>Reject</strong> — records a note (up to 1000 characters) that the applicant sees on <strong>Become an instructor</strong>, and sends an email. The applicant can edit the form and apply again; an approved application is not re-reviewed.</li>
+        </ul>
+        <p>Applicants keep their student access while they wait, so a slow review never blocks their learning.</p>
       </section>
 
       <section class="sec" id="commerce">
@@ -174,65 +259,209 @@
         <p>Three screens: what was bought, whether it was paid, and what the site owes its instructors.</p>
 
         <h3>Orders</h3>
-        <p>One row per checkout, with its items, total, discount, coupon, and payment status, and a link to the student. Orders are the financial record behind enrollments; an order that was never paid explains why a student has no access.</p>
+        <p>One row per checkout with the customer, order number, total, discount, coupon, payment method, and status. Open a row to see its items. The status cell is editable in place:</p>
+        <div class="table-wrap">
+          <table>
+            <tbody>
+              <tr><th scope="row">pending</th><td>The order exists but no settled payment is attached.</td></tr>
+              <tr><th scope="row">paid</th><td>Payment settled; enrollments and instructor earnings were created.</td></tr>
+              <tr><th scope="row">completed</th><td>A legacy status kept for old records.</td></tr>
+              <tr><th scope="row">canceled</th><td>The attempt was abandoned or closed.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="warn">
+          <span class="note-title">Changing an order status by hand does not enroll anyone</span>
+          <p>Enrollment and earnings are created by the payment finalizer, not by the order row. If a payment really settled, use <strong>Payments &rarr; Resync</strong> so the whole chain runs again. Editing the status is only for correcting the record.</p>
+        </div>
 
         <h3>Payments</h3>
-        <p>The gateway-side view of the same money. Each attempt shows the gateway used, the amount, the currency, and the gateway's own reference. Two actions matter in daily support:</p>
+        <p>The gateway-side view of the same money: user, amount, gateway, status, gateway reference, transaction id, order, coupon, and how the payment was verified (webhook, success page, resync, free checkout).</p>
         <ul>
-          <li><strong>Resync</strong> — ask the gateway what really happened. When a webhook was missed or a customer closed the tab, a resync settles the payment record and finalizes the order and the enrollment. It can also be run on several rows at once.</li>
-          <li><strong>Mark cancelled</strong> — close an attempt that will never complete, so it stops looking like a live transaction.</li>
+          <li><strong>Resync</strong> — asks the gateway what actually happened. A paid session is finalized (order paid, enrollments granted, earnings recorded); an unpaid one is canceled. Resync is also available for several selected rows at once.</li>
+          <li><strong>Cancel locally</strong> — marks a pending payment and its order canceled without asking the gateway. Use it only when the gateway is unreachable; resync is the safe default.</li>
         </ul>
+        <p>The gateway badge and the <strong>Verified Via</strong> column together explain almost every support question about access. A pending Stripe session with a missing webhook secret, for example, stays pending until a resync or a fixed webhook resolves it.</p>
 
         <h3>Payout Requests</h3>
-        <p>The instructor withdrawal queue. Each request shows the amount, the method and account details to pay into, and its status. Approving reserves the earnings behind it, <strong>mark paid</strong> completes the ledger, and rejecting records a reason and releases the money back to the instructor's available balance.</p>
+        <p>The instructor withdrawal queue. Each row shows the instructor, total earnings, available earnings, other pending payouts, the requested amount, the payment details they entered, and the status.</p>
+        <ol class="steps">
+          <li>
+            <h3>Approve</h3>
+            <p>Reserves the requested amount against the instructor's earnings and notifies them. Nothing is transferred.</p>
+          </li>
+          <li>
+            <h3>Pay out of band</h3>
+            <p>Send the money by the method in <strong>Payment Details</strong> — a bank transfer, PayPal, Wise, or whatever methods you configured. The panel does not move money.</p>
+          </li>
+          <li>
+            <h3>Mark Paid</h3>
+            <p>Completes the request, writes it into the ledger and the instructor's history, and notifies them.</p>
+          </li>
+          <li>
+            <h3>Or reject with a reason</h3>
+            <p>The reservation is released back to available earnings and the instructor is told why. They can request again.</p>
+          </li>
+        </ol>
+        <div class="note">
+          <span class="note-title">Partial requests are intentional</span>
+          <p>An instructor can request any amount at or above the minimum and at most their available balance. The request is allocated across their oldest available earnings, and anything left on an earning stays available for a later request.</p>
+        </div>
       </section>
 
       <section class="sec" id="coupons">
         <h2>Coupons</h2>
         <p>Discount codes and the evidence of who used them.</p>
-        <ul>
-          <li><strong>Coupons</strong> — create a code with a percentage or fixed amount, an optional total usage limit, a minimum order value, an active window, and an optional first-order-only restriction. Codes can be deactivated without being deleted, which keeps their history intact.</li>
-          <li><strong>Coupon usages</strong> — one row per redemption, linked to the coupon, the customer, and the payment it was applied to. This is the list to consult when someone claims a code did not work or has already been used.</li>
-        </ul>
+
+        <h3>Coupons</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Field</th>
+                <th scope="col">Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Code</td><td>What the student types at checkout. Keep it short and unambiguous.</td></tr>
+              <tr><td>Title, Description</td><td>Internal labels, shown in the panel and in some checkout messages.</td></tr>
+              <tr><td>Type</td><td><code>percent</code> takes a percentage of the cart; <code>fixed</code> takes an amount off.</td></tr>
+              <tr><td>Amount</td><td>The percentage (0–100) or the fixed value, depending on the type.</td></tr>
+              <tr><td>Usage limit</td><td>Total redemptions across the site. Empty means unlimited.</td></tr>
+              <tr><td>Minimum order amount</td><td>The cart total required before the code applies.</td></tr>
+              <tr><td>Start date, End date</td><td>The active window. Both are required.</td></tr>
+              <tr><td>Active</td><td>An off switch that keeps the code and its history.</td></tr>
+              <tr><td>First order only</td><td>Restricts the code to customers with no previous purchase.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>A code is validated again on the server at checkout, so editing or deactivating one takes effect immediately. A 100% coupon produces a zero-total order, which enrolls without touching a gateway.</p>
+
+        <h3>Coupon Usages</h3>
+        <p>One row per redemption, linked to the coupon, the customer, and the payment. This is the list to consult when someone claims a code did not work or has already been used. The rows are written by checkout; treat them as an audit trail.</p>
       </section>
 
       <section class="sec" id="certificates-group">
         <h2>Certificates and quizzes</h2>
         <p>Certificates students have earned, and the quizzes that unlock them.</p>
+
+        <h3>How a certificate is earned</h3>
+        <p>Issuance is automatic and idempotent — there is no "issue certificate" button. A student receives one only when <em>all</em> of the following are true:</p>
+        <ol>
+          <li>The course's lifecycle status is <strong>completed</strong>. While it is ongoing, a student at 100% is not eligible, because the instructor may still add lessons.</li>
+          <li>The student has an active or completed enrollment.</li>
+          <li>Every lesson in the course is marked completed.</li>
+          <li>Every active quiz has been passed at least once.</li>
+          <li>Certificates are enabled in <strong>General Settings</strong>.</li>
+        </ol>
+        <p>When an instructor marks a course completed, the platform walks its enrollments and issues certificates to everyone who already met the other conditions. A revoked certificate can be re-earned with a new serial and code after the student re-qualifies.</p>
+
+        <h3>Certificates</h3>
+        <p>Every issued certificate with its serial, public verification code, student, course, status, and issue date. Open one for the full record and three actions:</p>
         <ul>
-          <li><strong>Certificates</strong> — every issued certificate with its serial, its public verification code, the student, the course, and its issue date. Open one to download the PDF, <strong>revoke</strong> it with a reason (the public verification page then reports it as revoked), or <strong>restore</strong> a revocation made in error.</li>
-          <li><strong>Quizzes</strong> — the quizzes attached to courses, with the pass mark, the attempt limit, and the questions, options, points, and explanations behind them. The administrator can edit quiz settings and content when an instructor's quiz needs a correction.</li>
+          <li><strong>Download PDF</strong> — the same A4 landscape document the student downloads. Only available while the certificate is valid.</li>
+          <li><strong>Revoke</strong> — requires a reason (3–500 characters), stored for audit and shown on the public verification page. The student can no longer download it.</li>
+          <li><strong>Restore</strong> — clears the revocation when it was made in error.</li>
         </ul>
+        <p>The public page at <code>/certificates/{code}</code> needs no account: anyone can verify a serial and see whether it is valid or revoked. The snapshot stored at issuance (student name, course title, instructor, site name) is what the PDF prints, so renaming a course later cannot alter an old certificate.</p>
+
+        <h3>Quizzes</h3>
+        <p>One quiz per course, written by the instructor. The panel can supervise its settings but not create a second quiz for a course:</p>
+        <div class="table-wrap">
+          <table>
+            <tbody>
+              <tr><th scope="row">Quiz Active</th><td>Inactive quizzes are hidden from students and block certificate issuance.</td></tr>
+              <tr><th scope="row">Pass Mark (%)</th><td>0 means "use the global default" from General Settings. Only an administrator can change it, which keeps a failing student from pressuring an instructor into lowering the bar.</td></tr>
+              <tr><th scope="row">Max Attempts</th><td>Empty means unlimited.</td></tr>
+              <tr><th scope="row">Questions and options</th><td>Read-only in the panel's view screen; editable by the instructor in the course editor. Each question can carry points and an explanation shown in the marked review.</td></tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section class="sec" id="content-group">
         <h2>Content</h2>
-        <p>Everything a visitor reads on the public site — including the text you are legally answerable for — is written here rather than in code.</p>
+        <p>Everything a visitor reads on the public site — including the text you are legally answerable for — is written here rather than in code. Changes appear on the storefront immediately; the homepage is rebuilt per request.</p>
+
+        <h3>Homepage Content</h3>
+        <p>The landing page is assembled from seven rows, one per section. Each row has a <strong>Show this section</strong> toggle and its own fields; the order of the page is fixed, not drag-and-drop.</p>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th scope="col">Screen</th>
-                <th scope="col">What it controls</th>
+                <th scope="col">Section</th>
+                <th scope="col">Fields</th>
+                <th scope="col">What appears on the storefront</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <th scope="row">Homepage Content</th>
-                <td>Every section of the landing page: headings, body copy, calls to action, images, and the order they appear in. Changes are live on the storefront immediately.</td>
+                <th scope="row"><code>hero</code></th>
+                <td>Title, highlight, subtitle, badge, search placeholder, and two optional hero course cards.</td>
+                <td>The first screen: gradient headline, search box, category shortcuts, and two floating course cards. Leave the cards empty to fall back to the most popular courses.</td>
               </tr>
               <tr>
-                <th scope="row">Footer</th>
-                <td>The footer columns, their links, and the social icons, plus the short description and copyright line shown in every page footer.</td>
+                <th scope="row"><code>features_strip</code></th>
+                <td>Three items, each with a title, subtitle, and icon.</td>
+                <td>The three small assurances directly under the hero.</td>
               </tr>
               <tr>
-                <th scope="row">Terms &amp; Privacy</th>
-                <td>Two independent documents on one screen, each with its own page title and rich-text body. The terms render at <code>/terms</code> and the privacy policy at <code>/privacy-policy</code>, and both remain editable without a deploy.</td>
+                <th scope="row"><code>popular</code></th>
+                <td>Title, subtitle, badge (the "view all" label).</td>
+                <td>The featured bento grid of popular courses, ordered by enrollment velocity.</td>
               </tr>
               <tr>
-                <th scope="row">Cookie Consent</th>
-                <td>The consent banner: banner title, body copy, and the labels of its three buttons — accept all, keep only necessary, and the link to the cookie policy. The cookie policy page itself renders the same body text, so the copy lives in one place.</td>
+                <th scope="row"><code>latest_courses</code></th>
+                <td>Title, subtitle, badge.</td>
+                <td>Newest approved courses.</td>
               </tr>
+              <tr>
+                <th scope="row"><code>instructors</code></th>
+                <td>Title, subtitle, badge.</td>
+                <td>Top instructors by rating and sales.</td>
+              </tr>
+              <tr>
+                <th scope="row"><code>blog</code></th>
+                <td>Title, subtitle, badge.</td>
+                <td>The three latest published posts.</td>
+              </tr>
+              <tr>
+                <th scope="row"><code>call</code></th>
+                <td>Title, subtitle, trust line, two buttons (text and link each).</td>
+                <td>The closing call-to-action panel.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Each row exposes exactly the fields that section renders; a section left without custom copy still uses its built-in wording. Turning every section off leaves an empty page, which is a quick way to check whether a problem is content or code.</p>
+
+        <h3>Footer</h3>
+        <p>The footer is a single configuration row. Edit it rather than adding rows; creation and deletion are disabled on purpose.</p>
+        <ul>
+          <li><strong>About text</strong> — the short paragraph next to the logo; the site name is prepended automatically.</li>
+          <li><strong>Copyright line</strong> — shown after © and the current year.</li>
+          <li><strong>Quick links</strong> — reorderable label/URL pairs. Internal paths such as <code>/courses</code> or full URLs are both accepted.</li>
+          <li><strong>Social media links</strong> — platform (Facebook, Instagram, X, LinkedIn, YouTube, Telegram, GitHub, TikTok), accessibility label, and URL. The platform chooses the icon.</li>
+          <li><strong>Show footer</strong> — the on/off switch for the whole block.</li>
+        </ul>
+
+        <h3>Terms &amp; Privacy</h3>
+        <p>Two independent documents on one screen, each with its own page title and rich-text body. The terms render at <code>/terms</code> and the privacy policy at <code>/privacy-policy</code>, linked from the footer and the cookie banner. They stay editable without a deploy — but they are your legal text, not a template: have counsel review them before launch.</p>
+
+        <h3>Cookie Consent</h3>
+        <p>The first-visit banner: title, body, the labels of the two buttons (accept all, necessary only), and the label of the policy link. The cookie policy page at <code>/cookie-policy</code> renders the same body text, so the copy lives in one place. The visitor's choice is remembered in the browser; the banner does not reappear until storage is cleared.</p>
+
+        <h3>Blog</h3>
+        <p>Posts appear at <code>/blog</code>, at <code>/blog/{slug}</code>, and as the homepage's blog section.</p>
+        <div class="table-wrap">
+          <table>
+            <tbody>
+              <tr><th scope="row">Title, Slug</th><td>The headline and the public URL. The slug auto-fills from the title.</td></tr>
+              <tr><th scope="row">Excerpt</th><td>Summary on cards and in search results, up to 500 characters.</td></tr>
+              <tr><th scope="row">Cover image</th><td>Optional; used on cards, the post page, and link previews.</td></tr>
+              <tr><th scope="row">Content</th><td>The rich-text body.</td></tr>
+              <tr><th scope="row">Status</th><td><strong>Draft</strong> is invisible; <strong>Published</strong> is live.</td></tr>
+              <tr><th scope="row">Publish date</th><td>Empty publishes on save. A future date schedules the post.</td></tr>
             </tbody>
           </table>
         </div>
@@ -243,33 +472,277 @@
         <p>Reaching students, and answering them.</p>
 
         <h3>Send Notifications</h3>
-        <p>Compose a notification for one user or a group, give it a title, a body, and a type — info, success, warning, or danger — and send it. Notifications land in the recipient's in-app list and their dashboard, and each one tracks whether it has been read.</p>
+        <p>Compose an in-app notification for one user or for everyone.</p>
+        <ul>
+          <li><strong>Recipient</strong> — leave empty to send to every student and instructor. The list only contains those two roles; administrators are not spammed by a broadcast.</li>
+          <li><strong>Title and message</strong> — the text shown in the bell menu and on <code>/dashboard/notifications</code>.</li>
+          <li><strong>Type</strong> — info (blue), success (green), warning (yellow), or danger (red); it changes the badge color, not the delivery.</li>
+        </ul>
+        <div class="note">
+          <span class="note-title">These are in-app only</span>
+          <p>Sending a notification does not send an email. Course approval, rejection, payout, and application decisions send both an email and an in-app notification; a manual broadcast is in-app only.</p>
+        </div>
 
         <h3>Support Tickets</h3>
-        <p>The student support queue. Each ticket shows its subject, the student, and its status, and opens into the full conversation. Staff reply inside the thread, close a ticket when it is resolved, and reopen it if the problem returns. Replies reach the student in their own dashboard thread at once.</p>
+        <p>The student support queue: subject, user, priority, status, reply count, and date. The default filter is open tickets. Clicking a row opens the full conversation with the student's messages and every staff reply.</p>
+        <ul>
+          <li><strong>Reply</strong> — adds a message to the thread, visible to the student immediately.</li>
+          <li><strong>Close Ticket</strong> — marks it closed; the student sees the resolution and cannot add messages to a closed thread from the dashboard.</li>
+          <li><strong>Reopen</strong> — returns it to the open queue if the problem comes back.</li>
+        </ul>
+        <p>Priority is set by the student when opening the ticket (low, normal, high) and helps order the queue; it does not change notifications.</p>
       </section>
 
       <section class="sec" id="settings">
         <h2>Settings</h2>
-        <p>Six pages that decide how the whole installation behaves. Everything here can be changed at any time without touching a file.</p>
+        <p>Six pages that decide how the whole installation behaves. Everything here is saved to the database and read on the next request — no restart, no deploy, no file editing. Credentials saved here take priority over the fallback values in <code>.env</code>.</p>
 
         <h3>General Settings</h3>
-        <p>The site's identity: site name, logo, and favicon. The site name is used in page titles across the storefront, in the panel brand, in the footer, and on issued certificates. Uploading a new logo or favicon removes the previous file instead of leaving it behind.</p>
+        <div class="table-wrap">
+          <table>
+            <tbody>
+              <tr><th scope="row">Site name</th><td>Page titles, the panel brand, the footer, and issued certificates. This is the name visitors see; <code>APP_NAME</code> in <code>.env</code> is only a fallback for the backend.</td></tr>
+              <tr><th scope="row">Contact email</th><td>The site's public contact address, exposed to the storefront with the other settings. It is not the SMTP sender — that is <code>MAIL_FROM_ADDRESS</code>.</td></tr>
+              <tr><th scope="row">Logo</th><td>The panel sidebar brand, the storefront navbar and footer, the dashboard brand, and the social-preview image. PNG or SVG with a transparent background works best; the old file is deleted when you replace it.</td></tr>
+              <tr><th scope="row">Favicon</th><td>The browser-tab icon, also used by the panel. Square PNG, 64×64 or larger.</td></tr>
+              <tr><th scope="row">Default Quiz Pass Mark (%)</th><td>Used by every quiz whose pass mark is left at 0. Changing it affects those quizzes immediately.</td></tr>
+              <tr><th scope="row">Enable Certificates</th><td>The master switch. When off, no certificate is issued and the eligibility endpoint returns false, even for a completed course that satisfies every other rule. Existing certificates stay downloadable.</td></tr>
+            </tbody>
+          </table>
+        </div>
 
         <h3>Payment Gateways</h3>
-        <p>Stripe, PayPal, Mollie, and Razorpay, each with its own switch and its own credential fields — Stripe's secret key and webhook signing secret, PayPal's mode and client pair, Mollie's API key, Razorpay's key pair. Only enabled gateways are offered at checkout, so a gateway can be prepared and switched on later. Every value lives in the database, so nothing here needs to be edited into <code>.env</code>; the required webhook endpoint is printed under the field that needs it (Stripe) or next to the credential (Mollie). Secrets are write-only in the panel: an empty box keeps the saved value instead of clearing it.</p>
+        <p>Four gateways, each with its own switch and credential fields. Fill a gateway's fields before switching it on: an enabled gateway is offered at checkout, so an incomplete one fails at the payment step instead of quietly disappearing. The buttons appear in the order Stripe, PayPal, Mollie, Razorpay. Credentials are stored in the database, not in <code>.env</code>, and the secret boxes are write-only — empty on every visit, and saving one blank keeps the stored value.</p>
+        <p>Before configuring a gateway, decide the site currency. Checkout charges in the site currency (seeded as USD); a gateway only accepts the currencies enabled on your merchant account.</p>
+
+        <h4>Stripe (cards)</h4>
+        <ol class="steps">
+          <li>
+            <h3>Get the secret key</h3>
+            <p>In the <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener">Stripe Dashboard</a>, switch off Test mode for a live site, then open <strong>Developers &rarr; API keys</strong>. Copy the <strong>Secret key</strong> (<code>sk_live_…</code> or <code>sk_test_…</code>). The publishable key is not used by this integration.</p>
+          </li>
+          <li>
+            <h3>Paste it into the panel</h3>
+            <p><strong>Settings &rarr; Payment Gateways &rarr; Stripe Secret Key</strong>. Save it, then turn on <strong>Enable Stripe</strong> so the screen reflects the intended state. In this build a stored secret key is what makes Stripe available at checkout, so paste a live key only when you are ready to sell; the field is write-only and leaving it blank keeps the saved key.</p>
+          </li>
+          <li>
+            <h3>Create the webhook</h3>
+            <p>In <strong>Developers &rarr; Webhooks</strong>, add an endpoint for:</p>
+            <div class="codeblock" data-label="Endpoint URL">
+              <pre><code>https://api.example.com/api/v1/webhooks/stripe</code></pre>
+            </div>
+            <p>Replace <code>api.example.com</code> with your <code>API_DOMAIN</code>. Select these events:</p>
+            <ul>
+              <li><code>checkout.session.completed</code></li>
+              <li><code>checkout.session.async_payment_succeeded</code></li>
+              <li><code>checkout.session.async_payment_failed</code></li>
+              <li><code>checkout.session.expired</code></li>
+            </ul>
+          </li>
+          <li>
+            <h3>Paste the signing secret</h3>
+            <p>Open the new endpoint, reveal its <strong>Signing secret</strong> (<code>whsec_…</code>), and save it in <strong>Stripe Webhook Signing Secret</strong>. Without it the endpoint rejects every call with a 400 and logs <em>Webhook signing secret is not configured</em>.</p>
+          </li>
+        </ol>
+        <p><strong>What happens at checkout.</strong> The API creates a Stripe Checkout Session and redirects the browser to Stripe. On return, the success page verifies the session; the webhook does the same server-to-server. Both paths run the same idempotent finalizer, so an order is never enrolled twice. A failed or expired session cancels the pending payment. If a webhook was missed, <strong>Payments &rarr; Resync</strong> asks Stripe again.</p>
+
+        <h4>PayPal</h4>
+        <ol class="steps">
+          <li>
+            <h3>Create a REST app</h3>
+            <p>Sign in at <a href="https://developer.paypal.com/dashboard/applications" target="_blank" rel="noopener">developer.paypal.com</a>, open <strong>Apps &amp; Credentials &rarr; Apps &amp; Credentials</strong>, choose <strong>Live</strong> or <strong>Sandbox</strong>, and create an app (type: Merchant). Copy its <strong>Client ID</strong> and <strong>Secret</strong>.</p>
+          </li>
+          <li>
+            <h3>Fill the four fields</h3>
+            <p><strong>Enable PayPal</strong>, <strong>Mode</strong> (<code>live</code> or <code>sandbox</code> — it must match where the keys came from), <strong>Client ID</strong>, and <strong>Client Secret</strong>. Save.</p>
+          </li>
+        </ol>
+        <p><strong>What happens at checkout.</strong> The API creates a PayPal order through the REST Orders API and redirects to PayPal's approval page. On return the server <em>captures</em> the order; only a completed capture marks the payment paid. Replaying a captured order is idempotent, so a refresh cannot double-charge. No webhook endpoint has to be registered.</p>
+
+        <h4>Mollie</h4>
+        <ol class="steps">
+          <li>
+            <h3>Create an API key</h3>
+            <p>In the <a href="https://my.mollie.com/dashboard/developers/api-keys" target="_blank" rel="noopener">Mollie dashboard</a>, open <strong>Developers &rarr; API keys</strong>. Use the <strong>Live</strong> key for production or the <strong>Test</strong> key while setting up. Copy it (<code>live_…</code> / <code>test_…</code>).</p>
+          </li>
+          <li>
+            <h3>Paste and enable</h3>
+            <p><strong>Enable Mollie</strong>, paste the key into <strong>Mollie API Key</strong>, and save.</p>
+          </li>
+        </ol>
+        <p><strong>What happens at checkout.</strong> Mollie hosts the payment page (iDEAL, cards, and the methods enabled on your Mollie account). On return, the API asks Mollie for the payment's real status — only <code>paid</code> finalizes the order. The status is never taken from the browser, and no webhook registration is needed. If the buyer closes the tab before returning, the payment stays pending; settle it with <strong>Payments &rarr; Resync</strong>.</p>
+
+        <h4>Razorpay</h4>
+        <ol class="steps">
+          <li>
+            <h3>Generate API keys</h3>
+            <p>In the <a href="https://dashboard.razorpay.com/app/keys" target="_blank" rel="noopener">Razorpay Dashboard</a>, open <strong>Account &amp; Settings &rarr; API Keys</strong> (in test mode: <strong>Settings &rarr; API Keys</strong>) and generate a key. Copy the <strong>Key ID</strong> (<code>rzp_live_…</code> / <code>rzp_test_…</code>) and the <strong>Key Secret</strong> shown once.</p>
+          </li>
+          <li>
+            <h3>Paste and enable</h3>
+            <p><strong>Enable Razorpay</strong>, fill <strong>Key ID</strong> and <strong>Key Secret</strong>, and save. Both fields are required; the gateway is offered only when both are present.</p>
+          </li>
+        </ol>
+        <p><strong>What happens at checkout.</strong> The API creates a Razorpay order and the storefront opens the Razorpay Checkout modal. The browser returns with a payment id and an HMAC signature; the server verifies the signature, then fetches the order's payments and finalizes only a <code>captured</code> payment. No redirect URL or webhook is needed.</p>
+
+        <div class="warn">
+          <span class="note-title">Test with the smallest real purchase</span>
+          <p>Configure one gateway first, make a low-priced course, buy it with a real (or sandbox) card, and confirm four things: the order becomes <code>paid</code>, the course appears in the student's dashboard, the payment shows <code>verified_via</code>, and the instructor's earning appears in <strong>Payout Requests</strong> context. Then repeat with a coupon and with a failed payment.</p>
+        </div>
 
         <h3>Payout Methods</h3>
-        <p>Two things in one screen: the commercial rules — the instructor commission percentage and the minimum payout amount — and the list of payout methods instructors may choose from. Each method has a value, a label, and a label for the account field it asks for, so adding a new payout route is a matter of adding a row.</p>
+        <p>Two things on one screen: the commercial rules and the withdrawal methods instructors may choose.</p>
+        <ul>
+          <li><strong>Instructor commission (%)</strong> — the site's share of every sale. It is copied onto each earning at the moment of sale, so changing the rate never rewrites past earnings.</li>
+          <li><strong>Minimum payout amount</strong> — below this, the instructor's request form refuses the amount and states the threshold.</li>
+          <li><strong>Methods</strong> — a reorderable list of three fields: <strong>Key</strong> (a stable identifier such as <code>bank_transfer</code>), <strong>Display name</strong> (what the instructor sees), and <strong>Account hint</strong> (the placeholder that tells them what to enter, e.g. "IBAN and account holder").</li>
+        </ul>
+        <p>Removing a method hides it from future requests; requests already submitted keep the details they stored. The defaults are bank transfer, PayPal, and Wise; edit them to match how you actually pay.</p>
 
         <h3>Social Login</h3>
-        <p>Google sign-in. Enable it and paste the client ID and secret, and the screen shows the exact redirect URI to register in the Google console for this installation, built from the site's own URL. When these fields are empty, the values in the backend environment file are used instead.</p>
+        <p>Google sign-in. The button appears on the login and register pages only when <strong>Enable Login with Google</strong> is on and both credentials are saved. Save the credentials first, then enable the switch.</p>
+        <ol class="steps">
+          <li>
+            <h3>Create a Google Cloud project</h3>
+            <p>Open the <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console</a>, create or select a project, and open <strong>APIs &amp; Services &rarr; OAuth consent screen</strong>. Choose <strong>External</strong>, fill the app name, user support email, and developer contact, and add your storefront domain as an authorized domain.</p>
+          </li>
+          <li>
+            <h3>Create the OAuth client</h3>
+            <p>Go to <strong>APIs &amp; Services &rarr; Credentials &rarr; Create credentials &rarr; OAuth client ID</strong>. Application type: <strong>Web application</strong>.</p>
+            <p>Under <strong>Authorized JavaScript origins</strong>, add the storefront origin:</p>
+            <div class="codeblock" data-label="Origin">
+              <pre><code>https://example.com</code></pre>
+            </div>
+            <p>Under <strong>Authorized redirect URIs</strong>, add the URI shown on the Social Login screen. With the Docker stack it is:</p>
+            <div class="codeblock" data-label="Redirect URI">
+              <pre><code>https://example.com/auth/google/callback</code></pre>
+            </div>
+            <p>Copy it from the panel rather than typing it from memory, and do not confuse it with the storefront's own <code>/auth/callback</code> page, which is where the browser lands after the backend finishes.</p>
+          </li>
+          <li>
+            <h3>Paste the credentials</h3>
+            <p>Copy the <strong>Client ID</strong> and <strong>Client secret</strong> into the same screen, enable the toggle, and save. Changes are picked up on the next sign-in attempt.</p>
+          </li>
+        </ol>
+        <p><strong>What happens when a visitor uses it.</strong> The button navigates to the API's OAuth start route, Google returns to the callback above, and the API creates or finds the account and starts a normal session. If the Google email already belongs to a password account, the visitor is told to sign in with the password and link Google from the profile instead of silently merging two identities. From <strong>Profile &rarr; Connected accounts</strong> a signed-in user can link or unlink Google; unlinking is refused when it would leave no way to sign in.</p>
+        <div class="note">
+          <span class="note-title">Testing and publishing the consent screen</span>
+          <p>While the Google consent screen is in <em>Testing</em>, only test users you list can sign in. Publish it before launch. The redirect URI must match exactly — scheme, host, path, and no trailing slash.</p>
+        </div>
 
         <h3>Storage</h3>
-        <p>Where lesson media lives and how it is delivered: the disk (a local private directory, a public one, or an S3-compatible bucket), the streaming mode, and the bucket's key, secret, region, bucket name, URL, endpoint, and path-style setting for providers that need it. A connection test verifies the credentials before a large course is uploaded, and a checklist appears during long uploads so the browser is not abandoned mid-transfer. Values saved here take priority over the environment file.</p>
+        <p>Where lesson videos, trailers, and attachments live, and how their bytes reach the browser.</p>
+
+        <h4>Delivery choices</h4>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Field</th>
+                <th scope="col">Options</th>
+                <th scope="col">Effect</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Lesson Video Disk</strong></td>
+                <td>private, public, videos, s3</td>
+                <td><code>private</code> is the safe default: files sit on the server's private storage. <code>s3</code> sends new uploads to the bucket. <code>public</code> and <code>videos</code> are local disks that can be served directly — avoid them for paid content.</td>
+              </tr>
+              <tr>
+                <td><strong>Video Serving Mode</strong></td>
+                <td>proxy, signed</td>
+                <td><code>proxy</code> streams bytes through PHP after checking enrollment. <code>signed</code> redirects to a time-limited bucket URL, so bandwidth goes straight from the bucket to the viewer; it falls back to proxying when the disk cannot sign URLs.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="warn">
+          <span class="note-title">The bucket must stay private</span>
+          <p>Do not enable public access or attach a public base URL to the bucket. A public bucket turns every lesson into a downloadable file for anyone who guesses a path. Signed mode still requires the objects themselves to be private.</p>
+        </div>
+
+        <h4>S3 / cloud credentials</h4>
+        <p>Turn on <strong>Enable S3 / cloud storage</strong> first — while it is off, the panel's storage values are ignored and the <code>.env</code> values apply. Then fill:</p>
+        <div class="table-wrap">
+          <table>
+            <tbody>
+              <tr><th scope="row">Access Key ID</th><td>The key from your provider (AWS IAM access key, R2 token access key, Spaces key, MinIO user).</td></tr>
+              <tr><th scope="row">Secret Access Key</th><td>Its secret. Write-only in the panel.</td></tr>
+              <tr><th scope="row">Region</th><td><code>us-east-1</code>, <code>eu-west-1</code>, <code>auto</code> for R2, and so on, as required by the provider.</td></tr>
+              <tr><th scope="row">Bucket</th><td>The exact bucket name, not its URL.</td></tr>
+              <tr><th scope="row">Custom URL / CDN base</th><td>Optional. Used to build file links when a CDN sits in front of the bucket.</td></tr>
+              <tr><th scope="row">Custom endpoint</th><td>Required for non-AWS providers: R2, Wasabi, MinIO, Spaces. Leave empty for AWS S3.</td></tr>
+              <tr><th scope="row">Use path-style endpoint</th><td>Enable for MinIO or any provider that needs the bucket in the path instead of the hostname.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4>Provider recipes</h4>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Provider</th>
+                <th scope="col">Where the keys come from</th>
+                <th scope="col">Endpoint / region</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">AWS S3</th>
+                <td><a href="https://console.aws.amazon.com/iam/" target="_blank" rel="noopener">IAM</a> &rarr; Users &rarr; create a user with programmatic access and an inline policy for the bucket (s3:GetObject, PutObject, DeleteObject, ListBucket). Copy the access key pair.</td>
+                <td>Endpoint empty; region as created (e.g. <code>eu-west-1</code>).</td>
+              </tr>
+              <tr>
+                <th scope="row">Cloudflare R2</th>
+                <td><a href="https://dash.cloudflare.com/" target="_blank" rel="noopener">R2</a> &rarr; Manage R2 API Tokens &rarr; Create token with <em>Object Read &amp; Write</em> for the bucket. The token gives the Access Key ID and Secret.</td>
+                <td><code>https://&lt;account-id&gt;.r2.cloudflarestorage.com</code>; region <code>auto</code>.</td>
+              </tr>
+              <tr>
+                <th scope="row">DigitalOcean Spaces</th>
+                <td><a href="https://cloud.digitalocean.com/spaces/access_keys" target="_blank" rel="noopener">API &rarr; Spaces Keys</a> &rarr; Create access key.</td>
+                <td><code>https://&lt;region&gt;.digitaloceanspaces.com</code>; region as created.</td>
+              </tr>
+              <tr>
+                <th scope="row">Wasabi</th>
+                <td><a href="https://console.wasabisys.com/" target="_blank" rel="noopener">Console</a> &rarr; Access Keys &rarr; Create access key.</td>
+                <td><code>https://s3.&lt;region&gt;.wasabisys.com</code>; matching region.</td>
+              </tr>
+              <tr>
+                <th scope="row">MinIO</th>
+                <td>A user and its access/secret key; create the bucket in the MinIO console.</td>
+                <td>Your MinIO URL; path-style endpoint on.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4>The safe order to enable it</h4>
+        <ol class="steps">
+          <li>
+            <h3>Save the credentials and test</h3>
+            <p>Fill the key fields, leave <strong>Lesson Video Disk</strong> on <code>private</code>, save, then press <strong>Test Connection</strong>. It uses exactly what a save would store, including unsaved edits. A failure names the bucket, endpoint, or permission that went wrong.</p>
+          </li>
+          <li>
+            <h3>Switch the disk</h3>
+            <p>Once the test passes, set <strong>Lesson Video Disk</strong> to <code>s3</code>, choose <code>proxy</code> or <code>signed</code>, and save. New uploads go to the bucket.</p>
+          </li>
+          <li>
+            <h3>Move existing files</h3>
+            <p>Existing media is not moved automatically. Run the included command from the server:</p>
+            <div class="codeblock" data-label="Terminal">
+              <pre><code>docker compose exec api php artisan media:migrate-to-cloud --target=s3</code></pre>
+            </div>
+            <p>Then open <strong>Storage Report</strong> to confirm what is on each disk. A lesson whose file is still local keeps working: the platform records which disk holds each file.</p>
+          </li>
+        </ol>
+
+        <h4>How the values are resolved</h4>
+        <p>When the S3 toggle is on, every non-empty panel field overrides the matching <code>AWS_*</code> value from <code>.env</code>; an empty field falls back to the environment. When the toggle is off, the panel's storage block is ignored entirely. The panel is the intended place to change storage, because it also drives the test button.</p>
 
         <h3>Storage Report</h3>
-        <p>A read-only account of stored media: how much is on each disk, how it is distributed across courses and lessons, and whether anything is in an unexpected place. Refresh it after moving a library to a bucket to confirm the migration did what you expected.</p>
+        <p>A read-only account of stored media: how much is on each disk, how it is distributed across courses and lessons, and which rows have no disk recorded yet ("legacy" files). Refresh it after a migration to confirm the move, and use it to spot a course whose video is still on the old local disk before you delete that disk.</p>
       </section>
     </article>
 
@@ -288,14 +761,12 @@
 
 <footer class="site-foot">
   <div class="foot-inner">
-    <span>LMS platform documentation &middot; v1.0 &middot; October 2026</span>
+    <span>LMS platform documentation &middot; v1.0 &middot; November 2026</span>
     <a href="index.html">Overview</a>
     <a href="installation.html">Installation</a>
     <a href="students.html">Students</a>
     <a href="instructors.html">Instructors</a>
     <a href="api.html">API</a>
-    <a href="docker.html">Docker</a>
-    <a href="deployment.html">Deploy</a>
   </div>
 </footer>
 

@@ -73,7 +73,11 @@ class SocialLogin extends Page
                                 $storefront = rtrim((string) (config('app.frontend_url')), '/');
 
                                 $html = '<div class="flex flex-col gap-1">';
-                                $html .= '<span class="text-sm text-gray-500">'.$storefront.'/auth/callback/google</span>';
+                                // Google must return to Laravel's Socialite callback on the
+                                // origin the flow started on (the storefront host proxies
+                                // /auth/* to the API). The storefront's own /auth/callback
+                                // page is a different route that runs afterwards.
+                                $html .= '<span class="text-sm text-gray-500">'.$storefront.'/auth/google/callback</span>';
                                 $html .= '</div>';
 
                                 return new HtmlString($html);

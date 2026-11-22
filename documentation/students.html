@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Student experience — LMS Documentation</title>
-<meta name="description" content="The student side of the platform: catalog and filters, course pages, cart and checkout, the classroom, quizzes, certificates, reviews, notifications, support, and data control." />
+<meta name="description" content="The student side of the platform: every storefront page, catalog and filters, course pages, cart and checkout, the classroom, quizzes, certificates, reviews, notifications, support, and data control." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Source+Serif+4:opsz,wght@8..60,400..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -19,7 +19,7 @@
     <span class="brand-mark">LMS</span>
     <span class="brand-text">Documentation</span>
   </a>
-  <p class="topbar-meta">v1.0 &middot; October 2026</p>
+  <p class="topbar-meta">v1.0 &middot; November 2026</p>
   <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
 </header>
 
@@ -32,13 +32,11 @@
     </div>
     <ol class="chapters">
       <li><a href="index.html"><span class="num">01</span> Overview</a></li>
-      <li><a href="installation.html"><span class="num">02</span> Installation</a></li>
+      <li><a href="installation.html"><span class="num">02</span> Installation on a server</a></li>
       <li><a href="students.html" class="is-current" aria-current="page"><span class="num">03</span> Student experience</a></li>
       <li><a href="instructors.html"><span class="num">04</span> Instructor workspace</a></li>
       <li><a href="admin.html"><span class="num">05</span> Admin panel</a></li>
       <li><a href="api.html"><span class="num">06</span> API reference</a></li>
-      <li><a href="docker.html"><span class="num">07</span> Docker deployment</a></li>
-      <li><a href="deployment.html"><span class="num">08</span> Deploy to a server</a></li>
     </ol>
     <div class="rail-section" id="onThisPage" hidden>
       <h2 class="rail-heading">On this page</h2>
@@ -52,7 +50,7 @@
         <span class="chapter-num" aria-hidden="true">03</span>
         <h1>Student experience</h1>
         <p class="chapter-lede">Everything a visitor sees before buying, and everything a student uses afterwards: discovering courses, checking out, watching lessons, passing the quiz, and collecting a certificate.</p>
-        <p class="chapter-meta">Nine sections. The pages here live in the Next.js storefront; the data all comes from the API in the last chapter.</p>
+        <p class="chapter-meta">Ten sections. The pages here live in the Next.js storefront; the data all comes from the API in the last chapter.</p>
       </header>
 
       <section class="sec" id="catalog">
@@ -60,7 +58,7 @@
         <p>The public site is the storefront: a landing page assembled from admin-written sections, a filterable catalog, category pages, and an instructor directory.</p>
 
         <h3>The landing page</h3>
-        <p>Every block on the homepage — hero, feature list, featured courses, instructor highlights, statistics, call to action — is written in <strong>Content &rarr; Homepage Content</strong> in the admin panel. Nothing on it is hard-coded, so a new installation looks like your business rather than a template. Featured courses come from the <code>is_featured</code> flag on a course.</p>
+        <p>The homepage is assembled from seven sections — hero, the three-assurance strip, popular courses, latest courses, instructors, blog, and a closing call to action. Their headlines, subtitles, badges, links, and the two floating hero course cards are written in <strong>Content &rarr; Homepage Content</strong>; the course, instructor, and blog cards inside them are filled from the catalog, and a section with no custom copy falls back to its built-in wording.</p>
 
         <h3>The catalog</h3>
         <p><code>/courses</code> lists published, approved courses and is driven entirely by query parameters, so every combination is linkable and shareable:</p>
@@ -86,12 +84,12 @@
                 <td>A dual-handle range slider, with quick presets for free, under $50, and the full range.</td>
               </tr>
               <tr>
-                <th scope="row">Level</th>
-                <td>Beginner, intermediate, advanced.</td>
+                <th scope="row">Free only</th>
+                <td>A checkbox that limits the results to courses priced at zero.</td>
               </tr>
               <tr>
-                <th scope="row">Rating</th>
-                <td>Any rating, 3.0+, 3.5+, 4.0+, 4.5+.</td>
+                <th scope="row">Search</th>
+                <td>A debounced search box in the header; the term is written to the query string with everything else.</td>
               </tr>
             </tbody>
           </table>
@@ -100,11 +98,67 @@
 
         <h3>Instructors</h3>
         <p><code>/instructors</code> lists every active instructor with their course count and rating; <code>/instructors/{id}</code> shows a profile with that instructor's catalog and biography. An instructor only appears once an administrator has approved their application.</p>
+
+        <h3>Blog</h3>
+        <p><code>/blog</code> lists published posts written in the admin panel; <code>/blog/{slug}</code> renders one post with its cover image and rich text. The three latest posts also appear in the homepage's blog section. Draft posts and posts scheduled for a future date are never public.</p>
+      </section>
+
+      <section class="sec" id="page-map">
+        <h2>The page map</h2>
+        <p>Every public page is server-rendered by Next.js and reads its data from the API. Nothing here requires a login unless the table says so.</p>
+        <div class="table-wrap">
+          <table>
+            <caption>Public storefront</caption>
+            <thead>
+              <tr>
+                <th scope="col">Path</th>
+                <th scope="col">Page</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>/</code></td><td>Homepage, assembled from the seven admin-written sections.</td></tr>
+              <tr><td><code>/courses</code></td><td>Catalog with search, category, price, level, rating, and sort controls in the query string.</td></tr>
+              <tr><td><code>/courses/{slug}</code></td><td>Course page: overview, curriculum, instructor, reviews, and the purchase panel.</td></tr>
+              <tr><td><code>/courses/{slug}/{section}/{lesson}</code></td><td>The classroom player. Requires enrollment; free-preview lessons are the exception.</td></tr>
+              <tr><td><code>/courses/{slug}/quiz</code></td><td>The end-of-course quiz. Requires enrollment.</td></tr>
+              <tr><td><code>/categories/{slug}</code></td><td>One category's catalog.</td></tr>
+              <tr><td><code>/instructors</code>, <code>/instructors/{id}</code></td><td>Instructor directory and public profile.</td></tr>
+              <tr><td><code>/blog</code>, <code>/blog/{slug}</code></td><td>Blog index and article.</td></tr>
+              <tr><td><code>/cart</code>, <code>/checkout</code></td><td>Cart and payment method selection.</td></tr>
+              <tr><td><code>/payment/success</code>, <code>/payment/failed</code></td><td>Return pages that verify the payment with the gateway before announcing the outcome.</td></tr>
+              <tr><td><code>/login</code>, <code>/register</code>, <code>/forgot-password</code>, <code>/reset-password</code></td><td>Account entry points, including Google sign-in when enabled.</td></tr>
+              <tr><td><code>/terms</code>, <code>/privacy-policy</code>, <code>/cookie-policy</code></td><td>Legal pages written in the admin panel.</td></tr>
+              <tr><td><code>/certificates/{code}</code></td><td>Public certificate verification — no account needed.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <caption>Signed-in dashboard</caption>
+            <thead>
+              <tr>
+                <th scope="col">Path</th>
+                <th scope="col">Page</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>/dashboard/courses</code></td><td>Enrolled courses with progress and a resume action.</td></tr>
+              <tr><td><code>/dashboard/certificates</code></td><td>Issued certificates and PDF downloads.</td></tr>
+              <tr><td><code>/dashboard/wishlist</code></td><td>Saved courses.</td></tr>
+              <tr><td><code>/dashboard/payments</code></td><td>Payment history with search, status, and period filters.</td></tr>
+              <tr><td><code>/dashboard/notifications</code></td><td>In-app notifications and mark-as-read actions.</td></tr>
+              <tr><td><code>/dashboard/tickets</code>, <code>/dashboard/tickets/{id}</code></td><td>Support tickets and the reply thread.</td></tr>
+              <tr><td><code>/dashboard/profile</code></td><td>Name, email, avatar, password, connected Google account, and data controls.</td></tr>
+              <tr><td><code>/dashboard/become-instructor</code></td><td>The teaching application, visible to students only.</td></tr>
+              <tr><td><code>/dashboard</code>, <code>/dashboard/teaching</code>, <code>/dashboard/earnings</code></td><td>Instructor workspace — see the next chapter.</td></tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section class="sec" id="course-page">
         <h2>Inside a course page</h2>
-        <p>The course page has to convince a visitor and inform a buyer at the same time, so it is split into four tabs.</p>
+        <p>The course page has to convince a visitor and inform a buyer at the same time, so it is split into three tabs. The instructor card sits inside the overview rather than in a tab of its own.</p>
         <div class="table-wrap">
           <table>
             <thead>
@@ -116,25 +170,21 @@
             <tbody>
               <tr>
                 <th scope="row">Overview</th>
-                <td>What the course covers, the objectives a student will reach, requirements they need beforehand, tags, level, and language.</td>
+                <td>What the course covers, the objectives a student will reach, requirements they need beforehand, tags, level, and the instructor card with a link to the public profile.</td>
               </tr>
               <tr>
                 <th scope="row">Curriculum</th>
                 <td>Every section and lesson with durations, plus a free preview on the lessons the instructor marked as previewable.</td>
               </tr>
               <tr>
-                <th scope="row">Instructor</th>
-                <td>The instructor's photo, headline, and biography with the rest of their catalog.</td>
-              </tr>
-              <tr>
                 <th scope="row">Reviews</th>
-                <td>The rating breakdown, every written review, and the review form for enrolled students.</td>
+                <td>The rating breakdown, every written review with its threaded replies, and the review form for enrolled students.</td>
               </tr>
             </tbody>
           </table>
         </div>
         <p>Alongside the tabs, a sticky purchase panel shows the price (with the discount price and the struck-through original when a discount is set), the rating, the lesson count, the total runtime, and the actions available to the visitor: add to cart, buy now, or add to wishlist. A logged-in student who already owns the course sees a continue button that resumes at their last lesson instead.</p>
-        <p>Preview videos come from the course's own preview field, and each previewable lesson can be watched without an account — the preview endpoint is public and rate limited so it cannot be used to scrape whole courses.</p>
+        <p>The course trailer and any lesson the instructor marks as a free preview can be watched without buying the course. Every other lesson checks the enrollment first, so a copied lesson URL does not give access.</p>
       </section>
 
       <section class="sec" id="cart">
@@ -157,9 +207,9 @@
         <p>Checkout turns the cart into an order, then into a payment. The gateway buttons come from the API, so only the gateways enabled in the admin panel are ever offered.</p>
         <ul>
           <li><strong>Redirect gateways</strong> — Stripe, PayPal, Mollie, and Razorpay send the customer to their own page or modal and back to a verification step, where the payment is confirmed against the gateway before the order is marked paid.</li>
-          <li><strong>Webhooks</strong> — Stripe and Mollie also confirm payments server to server, so an order still completes when a customer closes the tab before returning.</li>
+          <li><strong>Webhooks</strong> — Stripe also confirms payments server to server through its webhook, so its orders still complete when a customer closes the tab before returning. PayPal, Mollie, and Razorpay are confirmed when the browser comes back; if that never happens, an administrator resyncs the pending payment from the panel.</li>
           <li><strong>Zero-total orders</strong> — a free course, or a cart discounted to zero by a coupon, skips payment entirely and enrolls immediately.</li>
-          <li><strong>Failure and cancellation</strong> — payouts that fail or get abandoned leave the order unenrolled and visible in the admin panel, where it can be retried or cancelled.</li>
+          <li><strong>Failure and cancellation</strong> — payments that fail or are abandoned leave the order unenrolled and visible in the admin panel, where it can be resynced or cancelled.</li>
         </ul>
         <p>After a successful payment the student lands on a confirmation page and finds the course waiting in their dashboard. Every attempt, successful or not, is recorded and listed for the student under <strong>Payments</strong>.</p>
       </section>
@@ -213,19 +263,26 @@
         </div>
 
         <h3>Certificates</h3>
-        <p>When a student passes, the course becomes eligible for a certificate and the student can issue one from their dashboard. The certificate is generated as a PDF and stored with everything that must not change later:</p>
+        <p>A certificate is issued automatically — there is no "claim" button. It appears when <em>all</em> of these are true:</p>
+        <ol>
+          <li>The course's lifecycle is <strong>completed</strong>. While the course is still <strong>ongoing</strong>, 100% progress is not enough: the instructor may add lessons, so the student has not necessarily seen the whole course.</li>
+          <li>The student has an active enrollment and every lesson is marked completed.</li>
+          <li>Every active quiz has been passed at least once.</li>
+          <li>Certificates are enabled for the site.</li>
+        </ol>
+        <p>The course page shows which of these is still missing. When the instructor marks the course completed, the platform issues certificates to every student who already met the other conditions — the student does not have to open the page again. The certificate is generated as a PDF and stored with everything that must not change later:</p>
         <ul>
           <li>A <strong>serial number</strong> in human-readable form, for example <code>CERT-2026-000123</code>.</li>
           <li>A <strong>verification code</strong>, an unguessable identifier used by the public verification page.</li>
           <li>A <strong>snapshot</strong> of the student's name, the course title, the instructor, and the site name at the moment of issue, so renaming a course later cannot alter an issued certificate.</li>
         </ul>
-        <p>The student downloads the PDF from <strong>Certificates</strong> in their dashboard. Anyone — an employer, for instance — can check a certificate at <code>/certificates/{code}</code> without signing in, and the page states whether it is valid. An administrator can revoke a certificate with a reason, which is visible on that page, and a revoked certificate can be re-earned by retaking and passing the quiz.</p>
+        <p>The student downloads the PDF from <strong>Certificates</strong> in their dashboard. Anyone — an employer, for instance — can check a certificate at <code>/certificates/{code}</code> without signing in, and the page states whether it is valid. An administrator can revoke a certificate with a reason, which is visible on that page. A revoked certificate can be re-earned once the student meets every requirement again; the new certificate gets a fresh serial and code while the revoked record remains for audit.</p>
       </section>
 
       <section class="sec" id="reviews">
         <h2>Reviews and wishlist</h2>
         <p>Reviews keep a catalog honest: only students who are enrolled in a course can review it, they rate it from one to five stars and write a comment, and the API refuses a review from anyone else. The course rating shown throughout the catalog is the average of those reviews.</p>
-        <p>Reviews support threaded replies, so an instructor can answer a review under the original comment instead of starting a separate conversation. Administrators see and moderate every review from the panel and can remove one that breaks the rules.</p>
+        <p>Reviews support threaded replies, shown under the original comment. The reply endpoint accepts a parent review id, so a conversation stays attached to the course and the review it answers.</p>
         <p>The wishlist is a one-click list available from every course card and course page. Signed-in students see it at <code>/dashboard/wishlist</code>, which loads in pages as they scroll rather than all at once, and adding a course already in the cart or library is handled without duplicates.</p>
       </section>
 
@@ -292,7 +349,7 @@
     <nav class="pager" aria-label="Chapter navigation">
       <a class="prev" href="installation.html">
         <span class="pager-dir">Previous chapter</span>
-        Installation
+        Installation on a server
       </a>
       <a class="next" href="instructors.html">
         <span class="pager-dir">Next chapter</span>
@@ -304,14 +361,12 @@
 
 <footer class="site-foot">
   <div class="foot-inner">
-    <span>LMS platform documentation &middot; v1.0 &middot; October 2026</span>
+    <span>LMS platform documentation &middot; v1.0 &middot; November 2026</span>
     <a href="index.html">Overview</a>
     <a href="installation.html">Installation</a>
     <a href="instructors.html">Instructors</a>
     <a href="admin.html">Admin</a>
     <a href="api.html">API</a>
-    <a href="docker.html">Docker</a>
-    <a href="deployment.html">Deploy</a>
   </div>
 </footer>
 
