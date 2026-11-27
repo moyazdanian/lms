@@ -36,7 +36,6 @@ const { Progress } = require("../ui/progress");
 
 export default function SectionsAndLessonsSidebar({ lesson }) {
   const course = useCourseContext();
-  console.log(course);
 
   const { data: coursesProgress, isPending: isCoursesProgressPending } =
     useDashboardCourses();

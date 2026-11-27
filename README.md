@@ -20,6 +20,7 @@ covers it end to end.
 - [First sign-in](#first-sign-in)
 - [Payments and webhooks](#payments-and-webhooks)
 - [Documentation](#documentation)
+- [Updating](#updating)
 - [Support and license](#support-and-license)
 
 ---
@@ -95,8 +96,8 @@ covers it end to end.
 ├── documentation/            Offline HTML handbook (open index.html)
 ├── localhost/                Laravel application + Filament admin panel
 ├── frontend/                 Next.js storefront
-├── scripts/                  Repository tooling (release packaging)
-└── CHANGELOG.md
+├── CHANGELOG.md              Version history
+└── UPGRADING.md              Update and rollback guide
 ```
 
 `localhost/` is the Laravel application root — that naming is historical; it is
@@ -213,13 +214,23 @@ The handbook is static HTML — open it directly in a browser, no server needed:
 
 ---
 
+## Updating
+
+Every release is a complete package; download the new version from the
+marketplace account that purchased it. Back up the database, `.env` and local
+storage first, then follow [UPGRADING.md](UPGRADING.md). Migrations run when the
+API container boots. Do not unpack an update over a running installation, and
+keep the previous directory and database dump until the new version is verified.
+
+---
+
 ## Support and license
 
 Commercial license — see [LICENSE.txt](LICENSE.txt) for the terms that apply to
-this product and the list of third-party libraries it bundles. Redistribution,
-resale or public release of the source, in whole or in part, is not permitted.
+this product. Reselling or redistributing the source as-is is not permitted;
+the license from the marketplace where you purchased the item governs.
 
-Support covers installation and defects in the delivered code. Customisation,
-third-party service configuration and hosting are outside its scope.
+Support covers defects in the delivered code and questions about the documented
+features. Installation, server configuration, third-party service setup and customisation are outside its scope.
 
 Version history: [CHANGELOG.md](CHANGELOG.md).

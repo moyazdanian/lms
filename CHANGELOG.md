@@ -100,6 +100,3 @@ First public release.
   private storage disk, rather than public file URLs.
 - No default administrator account ships with the code; `ADMIN_EMAIL` and
   `ADMIN_PASSWORD` are required at install time.
-
-[Unreleased]: https://github.com/moyazdanian/lms/compare/1.0.0...HEAD
-[1.0.0]: https://github.com/moyazdanian/lms/releases/tag/1.0.0

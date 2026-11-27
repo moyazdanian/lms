@@ -1,0 +1,116 @@
+LMS — Learning Management System
+Codester Commercial License
+Version 1.0.0
+
+Copyright (c) 2026. All rights reserved.
+
+This Item is licensed, not sold. The license granted to you is the Codester
+Regular License or the Codester Extended License that applied to your purchase.
+The binding terms are the Codester Licenses page at
+https://www.codester.com/info/licenses. The summary below explains how those
+terms apply to this Item; it does not replace the Codester terms.
+
+--------------------------------------------------------------------------------
+1. REGULAR LICENSE — ONE PROJECT
+--------------------------------------------------------------------------------
+
+  - Use the Item in one project, for personal or commercial use, by yourself or
+    on behalf of one client.
+  - Development, testing, staging and production copies of the same project
+    count as one project. Updates to that project do not require another
+    license.
+  - You may modify the Item to build that project.
+  - You may not offer the Item for resale, on its own or as part of a project,
+    and you may not distribute its source files.
+  - To use the Item in another project, purchase another Regular License or an
+    Extended License.
+
+--------------------------------------------------------------------------------
+2. EXTENDED LICENSE — MULTIPLE PROJECTS
+--------------------------------------------------------------------------------
+
+  - Use the Item in unlimited projects, for personal or commercial use, by
+    yourself or on behalf of clients.
+  - You may modify the Item to build those projects.
+  - You may distribute or sublicense the source files as part of a larger
+    project.
+  - You may not resell the Item on its own or as-is.
+  - One Extended License covers additional projects; you do not need a new
+    license for each project.
+
+--------------------------------------------------------------------------------
+3. TERMS FOR BOTH LICENSES
+--------------------------------------------------------------------------------
+
+  - The author retains ownership of the Item. This is a license, not a sale.
+  - You may not resell, redistribute or publish the Item as-is, including on
+    public repositories, marketplaces, forums or "nulled" or "free download"
+    sites, except for the distribution expressly allowed by the Extended
+    License as part of a larger project.
+  - You may not claim authorship of the Item.
+  - You may not remove, obscure or alter this license file, copyright notices,
+    or author attribution in the source.
+  - Third-party services used with the Item (payment gateways, mail providers,
+    S3-compatible storage, social login providers and hosting) are governed by
+    their own terms and are not included in this license.
+
+--------------------------------------------------------------------------------
+4. THIRD-PARTY COMPONENTS
+--------------------------------------------------------------------------------
+
+The Item bundles open-source libraries that remain under their own licenses.
+Those licenses govern the libraries; the terms above govern the Item's own code.
+The complete list of shipped versions is in backend/composer.lock and
+frontend/package-lock.json.
+
+Backend (PHP)
+  Laravel Framework, Laravel Sanctum, Laravel Socialite, Laravel Breeze,
+  Laravel Tinker, Filament, guava/filament-icon-picker,
+  barryvdh/laravel-dompdf, doctrine/dbal, league/flysystem-aws-s3-v3,
+  stripe/stripe-php .............................................. MIT
+  dompdf/dompdf .................................................. LGPL-2.1
+
+Storefront (JavaScript)
+  Next.js, React, React DOM, Tailwind CSS, Radix UI, TipTap, KaTeX,
+  Axios, Formik, Yup, Chart.js, Recharts, Sonner, next-themes,
+  react-markdown, Shiki, embla-carousel .......................... MIT
+  BlockNote ...................................................... MPL-2.0
+  DOMPurify ...................................................... MPL-2.0 OR Apache-2.0
+  Lucide icons ................................................... ISC
+
+Assets
+  Fonts published by Filament (Inter) are distributed under the SIL Open Font
+  License 1.1. Any additional fonts or illustrations shipped in
+  frontend/public or backend/public keep the license stated alongside them.
+
+Where a bundled library's license requires that its notice be preserved
+(MPL-2.0 and LGPL-2.1 components), the original license texts are available in
+the respective package directories after dependency installation.
+
+--------------------------------------------------------------------------------
+5. NO WARRANTY
+--------------------------------------------------------------------------------
+
+THE ITEM IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR BE LIABLE
+FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE ITEM OR THE USE OR OTHER DEALINGS IN THE ITEM.
+
+--------------------------------------------------------------------------------
+6. SUPPORT
+--------------------------------------------------------------------------------
+
+Support is provided through the Codester item page for 12 months from the
+purchase date. It covers defects in the delivered code and questions about
+using the documented features. Installation, server configuration, third-party
+service setup and customisation are outside its scope; the included handbook
+covers the supported Docker installation in detail.
+
+--------------------------------------------------------------------------------
+7. QUESTIONS
+--------------------------------------------------------------------------------
+
+If you need to use the Item in a way not described above, contact the author
+through the Codester item page before using it. Codester's license terms are
+the final authority for every purchase.

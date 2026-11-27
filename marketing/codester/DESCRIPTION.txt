@@ -1,0 +1,92 @@
+LMS is a complete, self-hosted learning platform for academies, course creators and training businesses. It combines a Laravel 12 REST API and Filament admin panel with a Next.js 15 storefront, so instructors can publish courses and students can buy, watch and complete them on your own domain.
+
+The item is delivered as full source code and deployed with Docker Compose. There are no monthly fees, no encoded files and no license server. You own the installation and the data.
+
+WHAT YOU GET
+
+Storefront
+- Home page assembled from admin-managed sections: hero, feature strip, popular and latest courses, instructors, blog and call to action.
+- Course catalogue with search, category filters, price filters, sorting and pagination.
+- Course detail pages with overview, instructor profile, curriculum, free previews and reviews.
+- Cart, coupons and checkout with Stripe, PayPal, Mollie or Razorpay.
+- Student dashboard: enrolled courses, lesson player, progress tracking, quizzes, certificates, wishlist, payments, notifications and support tickets.
+- Blog index and article pages, written in the admin panel.
+- Dark/light theme, responsive layout and cookie-consent banner.
+
+Instructor workspace
+- Application flow with admin approval.
+- Seven-step course builder, curriculum editor, lesson attachments and quiz builder.
+- Sales and earnings charts, commission ledger and payout requests.
+- Edit requests for live courses, so changes are reviewed before they appear.
+- Public instructor profile page.
+
+Admin panel (Filament)
+- Dashboard with revenue, orders, instructors, pending payouts and pending applications.
+- Categories, courses, curriculum, course approvals and sensitive-field edit requests.
+- Users, instructors, applications and enrollments.
+- Orders, gateway payments, payout requests, coupons and coupon usage.
+- Certificates and quizzes, including pass mark, attempt limit, revocation and retake.
+- Homepage content, footer, terms, privacy, cookie consent and blog posts.
+- Support tickets and in-app notifications for one user or everyone.
+- Settings for general details, payment gateways, payout methods, Google sign-in and storage (local or S3-compatible) with a connection test and storage report.
+
+Backend and platform
+- Versioned REST API under /api/v1, consumed by the Next.js storefront.
+- Sanctum session authentication and optional Google sign-in.
+- Queued notifications and transactional email over SMTP.
+- Stripe, PayPal, Mollie and Razorpay with server-side verification and an idempotent payment finalizer, so a webhook and a redirect cannot credit an order twice.
+- Private lesson videos and attachments with enrollment checks; PDF certificates with public verification.
+- Local storage or any S3-compatible bucket (AWS S3, Cloudflare R2, MinIO, DigitalOcean Spaces, Wasabi), with signed-URL delivery.
+- Feature tests for authentication, checkout, approvals, payouts, media, certificates and legal pages.
+- Docker Compose stack: MySQL, nginx + PHP-FPM + queue worker, Next.js and Caddy for automatic HTTPS.
+
+TECH STACK
+- Backend: PHP 8.2+ (Docker image runs PHP 8.4), Laravel 12, Filament 4, Sanctum 4.
+- Storefront: Next.js 15 App Router, React 19, Tailwind CSS 4.
+- Database: MySQL 8.4.
+- Deployment: Docker Engine 24+ and Docker Compose v2.
+- Payments: Stripe, PayPal, Mollie and Razorpay.
+- Media: local Docker volume or private S3-compatible bucket.
+- Email: any SMTP provider.
+
+REQUIREMENTS
+- A Linux server (Ubuntu 22.04 or 24.04 LTS recommended) with Docker Engine 24+ and the Compose v2 plugin.
+- 2 vCPU, 2 GB RAM and 40 GB disk minimum; 4 GB RAM makes the first build comfortable.
+- Two DNS records pointing to the server: the storefront host and the API host.
+- Ports 80 and 443 open for Caddy and Let's Encrypt.
+- An SMTP account for verification, password resets and decision emails.
+- Payment gateway, Google OAuth and S3 accounts are optional; the platform runs without them.
+
+This is a Docker/VPS product, not a shared-hosting or cPanel script. No PHP, Node, Composer, MySQL or nginx installation is required on the host.
+
+INSTALLATION
+1. Upload the package to the server and open the folder that contains docker-compose.yml.
+2. Copy .env.docker.example to .env and fill in the two domains, database passwords, the first administrator and SMTP.
+3. Run: docker compose up -d --build
+4. The first boot waits for MySQL, runs the migrations, seeds the starting content and creates the administrator.
+5. Open https://your-storefront-domain for the site and https://your-api-domain/admin for the admin panel.
+
+The complete handbook is included in the download as static HTML. It covers DNS, every environment key, SMTP, first boot, HTTPS, backups, updates and troubleshooting, plus walkthroughs of the student, instructor and admin areas.
+
+DOCUMENTATION
+Documentation is included inside the main ZIP under documentation/. Open documentation/index.html in a browser. It is written in English and covers installation, configuration, every feature and the update path.
+
+LICENSE
+The item is licensed under the Codester Regular or Extended License.
+- Regular: one project, personal or commercial use, by you or one client.
+- Extended: multiple projects, personal or commercial use, by you or clients; source files may be distributed or sublicensed as part of a larger project.
+- Neither license permits reselling the item as-is.
+The full license is included in LICENSE.txt. Codester's license page is the binding agreement.
+
+SUPPORT
+Support is provided through the Codester item page for 12 months from purchase. It covers defects in the delivered code and questions about the documented features. Installation, server configuration, third-party service setup and customisation are outside its scope; the included handbook covers the supported Docker installation in detail.
+
+WHAT IS NOT INCLUDED
+- Hosting, domains, SSL certificates, SMTP accounts, payment gateway accounts and S3 buckets.
+- Demo courses, videos or other content; add your own course catalogue.
+- Installation or server-management services.
+- Custom design or custom feature development.
+- A mobile app. The storefront and dashboards are responsive web applications.
+
+VERSION
+1.0.0 - first public release. See CHANGELOG.md inside the download for the full history.

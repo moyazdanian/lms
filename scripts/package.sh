@@ -33,6 +33,14 @@ step() {
 
 command -v git >/dev/null 2>&1 || die "git is required."
 command -v unzip >/dev/null 2>&1 || die "unzip is required."
+PYTHON=""
+for candidate in python3 python; do
+  if command -v "$candidate" >/dev/null 2>&1 && "$candidate" -c 'import sys' >/dev/null 2>&1; then
+    PYTHON=$(command -v "$candidate")
+    break
+  fi
+done
+[[ -n "$PYTHON" ]] || die "python3 or python is required for the buyer folder layout."
 
 # ---------------------------------------------------------------------------
 # 1. Version
@@ -105,6 +113,7 @@ fi
 REQUIRED_FILES=(
   README.md
   CHANGELOG.md
+  UPGRADING.md
   LICENSE.txt
   docker-compose.yml
   .env.docker.example
@@ -135,7 +144,14 @@ rm -f "$ARCHIVE"
 git archive --format=zip --prefix="$PREFIX/" -o "$ARCHIVE" HEAD
 
 # ---------------------------------------------------------------------------
-# 5. Verify the produced archive
+# 5. Prepare the buyer folder layout
+# ---------------------------------------------------------------------------
+step "Renaming localhost/ to backend/"
+
+"$PYTHON" scripts/prepare-release.py "$ARCHIVE" "$PREFIX"
+
+# ---------------------------------------------------------------------------
+# 6. Verify the produced archive
 # ---------------------------------------------------------------------------
 step "Verifying the archive"
 
@@ -144,7 +160,7 @@ unzip -Z1 "$ARCHIVE" | tr -d '\r' > "$WORK_DIR/archive.txt"
 
 # Anything the buyer must never see: real env files, dependencies, build output,
 # and the developer-only files excluded via .gitattributes.
-FORBIDDEN='(^|/)\.env$|(^|/)\.env\.(local|production|docker)$|node_modules/|/vendor/|\.next/|/CLAUDE\.md|/\.cursor/|/\.mcp\.json|/boost\.json|V1-RELEASE-PLAN\.md|/scripts/|diag_query'
+FORBIDDEN='(^|/)\.env$|(^|/)\.env\.(local|production|docker)$|node_modules/|/vendor/|\.next/|/CLAUDE\.md|/\.cursor/|/\.mcp\.json|/boost\.json|V1-RELEASE-PLAN\.md|/scripts/|/marketing/|(^|/)localhost/|diag_query'
 
 if grep -qE "$FORBIDDEN" "$WORK_DIR/archive.txt"; then
   grep -E "$FORBIDDEN" "$WORK_DIR/archive.txt" | head -20 >&2
@@ -152,8 +168,8 @@ if grep -qE "$FORBIDDEN" "$WORK_DIR/archive.txt"; then
   die "The archive contains files that must not ship. Check the export-ignore rules in .gitattributes."
 fi
 
-for required in README.md CHANGELOG.md LICENSE.txt docker-compose.yml .env.docker.example \
-                documentation/index.html localhost/artisan frontend/package.json; do
+for required in README.md CHANGELOG.md UPGRADING.md LICENSE.txt docker-compose.yml .env.docker.example \
+                documentation/index.html backend/artisan frontend/package.json; do
   grep -qxF "$PREFIX/$required" "$WORK_DIR/archive.txt" || die "The archive is missing $required"
 done
 

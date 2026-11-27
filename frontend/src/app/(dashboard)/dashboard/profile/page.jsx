@@ -8,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/common/ErrorState";
 import { useUser } from "@/hooks/useUser";
 import { InstructorForm } from "@/components/account/InstructorForm";
-import { ConnectedAccounts } from "@/components/account/ConnectedAccounts";
 
 export default function ProfilePage() {
   const { data: user, isPending, isFetching, error } = useUser();
@@ -44,7 +43,6 @@ export default function ProfilePage() {
 
       <PasswordForm />
 
-      <ConnectedAccounts />
     </div>
   );
 }

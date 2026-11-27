@@ -1,0 +1,1 @@
+Self-hosted LMS with instructor marketplace, 4 payment gateways, quizzes, certificates and Docker. Laravel 12 + Next.js 15.

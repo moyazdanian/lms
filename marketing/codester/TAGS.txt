@@ -1,0 +1,1 @@
+lms, learning management system, online course platform, laravel, next.js, react, php, mysql, course marketplace, instructor marketplace, stripe, paypal, docker, self-hosted, certificate
